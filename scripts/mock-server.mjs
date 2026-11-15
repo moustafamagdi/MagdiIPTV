@@ -6,7 +6,7 @@ const names=['Atlas News HD','Nature & Discovery','Cinema One','الوثائقي
 const channel=(name,i)=>({name,stream_id:i+1,category_id:i<3?'1':'2',stream_type:'live'});
 let saved={host:'http://127.0.0.1:8787',username:'demo',password:'demo',mode:'xtream'};
 let slowEpg=false;
-const web=path.resolve('app/src/main/assets/www');
+const web=path.resolve(process.argv[2]||'app/src/main/assets/www');
 const server=http.createServer(async(req,res)=>{
  const u=new URL(req.url,'http://localhost');
  const json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));};
