@@ -6,8 +6,8 @@ The first release combines the MIT-licensed IPTVnator embedded Java backend with
 
 ## Install
 
-- `dist/Magdi-IPTV-0.1.1-personal.apk`: private first-run account provisioning, as requested. Keep this APK private: its provisioning asset contains the supplied account. The password can be changed in Settings. The installed account is encrypted using Android Keystore.
-- `dist/Magdi-IPTV-0.1.1.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
+- `dist/Magdi-IPTV-0.1.2-personal.apk`: private first-run account provisioning, as requested. Keep this APK private: its provisioning asset contains the supplied account. The password can be changed in Settings. The installed account is encrypted using Android Keystore.
+- `dist/Magdi-IPTV-0.1.2.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
 - Both APKs have the same package, version and personal signing certificate; updates preserve app data. Neither replaces Magdi Tube.
 
 Open the app and tap **Connect subscription / اتصال بالاشتراك**. Settings support server address (including optional port), username and password, or a remote M3U URL. The configured account is never submitted to an app-operated server. Local storage contains favorites/history; M3U favorites may contain their stream URLs.
@@ -26,7 +26,9 @@ The keep-alive service never asks for a second audio-focus owner. Explicit Pause
 
 ## Diagnostics
 
-Settings → Export diagnostics shares a rotating app-only log with `phone` / `car` playback events, playback time, ready state, decoded-frame count, device/WebView versions and installation metadata. It excludes provider URLs, account secrets, channel names and raw network exceptions. Frame/time observations do not independently verify audible output or display behavior on a vehicle.
+Settings → **Copy diagnostics** copies the report as text; **Export diagnostics** shares it as a `.txt` file. Both options also appear in the King Installer setup screen and use the same report format: device/WebView versions, installation metadata and recent `phone` / `car` playback events. Copy completion is confirmed in the selected language. Long reports retain the header and newest 180,000 characters of events, with an explicit notice when older entries are omitted, so clipboard transfer stays within Android limits.
+
+Diagnostics exclude provider URLs, account secrets, channel names and raw network exceptions. Frame/time observations do not independently verify audible output or display behavior on a vehicle.
 
 ## Build
 

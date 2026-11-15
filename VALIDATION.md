@@ -1,5 +1,13 @@
 # Magdi IPTV — validation
 
+## 0.1.2 — copy or export diagnostics
+
+Added separate copy/export actions in both web settings and native King Installer setup. Both paths use one report builder. Reports retain device and installation details plus the newest 180,000 characters of events; an explicit marker identifies any omitted older entries. Clipboard access and confirmation run on Android's UI thread after report preparation finishes off that thread.
+
+Validation: 23 Android tests passed, including three new checks that compare actual Android clipboard content with the prepared report, compare the exported file with the same builder and verify a read-only share intent, and check that long Unicode logs retain the header/newest events within the clipboard budget. All 61 backend checks passed. These clipboard/share checks use Robolectric API 32; clipboard interaction has not yet been tested on the user's Samsung phone. Existing playback behavior is unchanged.
+
+Version code 3 / `0.1.2-preview`, signed with the existing personal certificate. The GitHub APK is clean; the personal APK remains local. Artifact and tracked-source privacy scans are required before publication.
+
 ## 0.1.1 — King Installer and GitHub delivery
 
 Completed 16 November 2026. Both signed variants built successfully. Backend: 61 checks passed. Android tests: 20 passed (the previous 15 plus 5 installer integration checks). Release lint: 0 errors, 14 warnings.
