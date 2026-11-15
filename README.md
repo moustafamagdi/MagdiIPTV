@@ -6,13 +6,15 @@ The first release combines the MIT-licensed IPTVnator embedded Java backend with
 
 ## Install
 
-- `dist/Magdi-IPTV-0.1.2-personal.apk`: private first-run account provisioning, as requested. Keep this APK private: its provisioning asset contains the supplied account. The password can be changed in Settings. The installed account is encrypted using Android Keystore.
-- `dist/Magdi-IPTV-0.1.2.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
+- `dist/Magdi-IPTV-0.1.3-personal.apk`: private first-run account provisioning, as requested. Keep this APK private: its provisioning asset contains the supplied account. The password can be changed in Settings. The installed account is encrypted using Android Keystore.
+- `dist/Magdi-IPTV-0.1.3.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
 - Both APKs have the same package, version and personal signing certificate; updates preserve app data. Neither replaces Magdi Tube.
 
 Open the app and tap **Connect subscription / اتصال بالاشتراك**. Settings support server address (including optional port), username and password, or a remote M3U URL. The configured account is never submitted to an app-operated server. Local storage contains favorites/history; M3U favorites may contain their stream URLs.
 
 Live TV supports HLS and MPEG-TS through bundled HLS.js and MPEGTS.js. Auto tries HLS then TS. Movies and series support the formats/codecs available to the device's WebView. Unsupported codecs (for example some AC3/HEVC/MKV combinations) are not converted. No native transcoder, external player, DRM engine, recording or Stalker UI is included.
+
+Tap a channel, movie or episode once to start it. Artwork, title and surrounding row spacing form one touch target; the favorite star remains separate. The selected row immediately shows a starting/playing/paused/error state, with a visible confirmation bar and a **Show player** button when browsing lower in the list. Selecting does not rebuild the list or automatically jump its scroll position. Repeated taps on the same starting/playing item do not reopen its stream; a paused item resumes. An unsuccessful item can be retried with one tap. Series dialogs show an explicit loading state while fetching episodes.
 
 ## Android Auto
 

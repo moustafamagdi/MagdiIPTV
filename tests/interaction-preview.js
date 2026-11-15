@@ -1,0 +1,1 @@
+(async()=>{stop();await changeTab('live');const row=document.querySelector('#list .pick');row.scrollIntoView({block:'center',behavior:'instant'});selectItem(filtered[0]);await new Promise(r=>setTimeout(r,250));return {width:innerWidth,viewport:visualViewport.width,scroll:document.documentElement.scrollWidth,selected:current.name,phase:playbackPhase};})()

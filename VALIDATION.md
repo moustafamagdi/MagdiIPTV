@@ -1,5 +1,15 @@
 # Magdi IPTV — validation
 
+## 0.1.3 — single-tap playback selection
+
+Channel/movie/episode artwork and row padding now belong to the same native button as the title. Pointer-down adds immediate visual feedback; moving more than 10 pixels, cancelling, releasing or leaving clears it. Playback still starts only from the normal click event, so scrolling does not trigger playback. Touch-only devices no longer depend on hover styling.
+
+Selection updates existing rows rather than replacing the list DOM. Starting/playing/paused/failure states appear in the selected row and confirmation bar. Repeated selection of the same starting/playing item does not issue another stream request; a paused selection resumes. A failed item remains retryable. Series dialogs explicitly show loading, retry and empty states and reject responses for an obsolete dialog request.
+
+Validation: **15 CDP emulated-touch checks passed**, including artwork/padding taps, touch-down feedback, stable row identity, duplicate-tap suppression, independent favorites, paused-item resume, series/episode selection, failure/retry, and scrolling without accidental activation. **13 browser playback checks passed**, including decoded HLS/TS/MP4 frames, VOD resume and series enumeration. Responsive checks passed at 412 × 915 and 1000 × 500. Screenshots reviewed for selected-row and confirmation-bar layout. These tests use synthetic fixtures in Chrome; they do not establish physical Samsung or Android Auto touch behavior.
+
+Android tests: 23 passed. Backend checks: 61 passed. Release lint: 0 errors, 14 warnings. Both variants built and signed as version code 4 / `0.1.3-preview`. Evidence: `logs/touch-flows-0.1.3.json`, `logs/browser-flows-0.1.3.json`, `logs/selection-mobile.png` and Gradle reports. Personal provisioning stays local; the GitHub release is clean.
+
 ## 0.1.2 — copy or export diagnostics
 
 Added separate copy/export actions in both web settings and native King Installer setup. Both paths use one report builder. Reports retain device and installation details plus the newest 180,000 characters of events; an explicit marker identifies any omitted older entries. Clipboard access and confirmation run on Android's UI thread after report preparation finishes off that thread.
