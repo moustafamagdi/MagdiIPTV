@@ -1,0 +1,1 @@
+(async()=>{const config=await api('config');if(!config.configured||!config.hasPassword)throw Error('Account was not preserved across reinstall');return {configured:config.configured,passwordPreserved:config.hasPassword};})()

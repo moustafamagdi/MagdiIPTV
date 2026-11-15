@@ -1,0 +1,15 @@
+.private/
+.tools/
+.gradle/
+**/build/
+work/
+logs/
+local.properties
+dist/
+*.p12
+*.jks
+*.keystore
+.idea/
+*.iml
+.env
+.env.*

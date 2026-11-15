@@ -1,0 +1,1 @@
+(async()=>{const before=app.state();await new Promise(r=>setTimeout(r,3500));const after=app.state();if(!after.playing||after.time<=before.time)throw Error('Playback did not advance in background');return {test:'Playback advances after Home',pass:true,before,after,decodedFrames:v.getVideoPlaybackQuality().totalVideoFrames};})()

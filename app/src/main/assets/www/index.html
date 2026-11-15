@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Magdi IPTV</title><link rel="stylesheet" href="style.css"></head>
+<body>
+ <header class="top"><div class="brand"><span class="brand-icon">▶</span><div><strong>Magdi <b>IPTV</b></strong><small data-i18n="tagline">قنواتك، في مكان واحد</small></div></div><div class="top-actions"><button id="language" class="quiet">EN</button><button id="settings" class="quiet" data-i18n="settings">الإعدادات</button></div></header>
+ <main>
+  <section id="welcome" class="welcome">
+   <span class="eyebrow">MAGDI IPTV • WEB PLAYER</span><h1 data-i18n="welcome">شاشتك. قنواتك. اختيارك.</h1><p data-i18n="intro">أضف اشتراكك مرة واحدة، واستمتع بالقنوات والأفلام والمسلسلات من داخل التطبيق.</p>
+   <div class="welcome-actions"><button id="connect" class="primary" data-i18n="connect">اتصال بالاشتراك</button><button id="configure" data-i18n="configure">إضافة / تعديل الحساب</button></div><p id="welcome-state" class="subtle"></p>
+  </section>
+  <section id="workspace" hidden>
+   <div class="workspace-top"><div><span class="eyebrow" data-i18n="library">مكتبتك</span><h1 id="section-title">البث المباشر</h1></div><span class="connection"><i></i><span data-i18n="connected">متصل</span></span></div>
+   <nav id="tabs" class="tabs"><button data-tab="live" class="selected" data-i18n="live">البث المباشر</button><button data-tab="vod" data-i18n="vod">الأفلام</button><button data-tab="series" data-i18n="series">المسلسلات</button><button data-tab="favorites" data-i18n="favorites">المفضلة</button><button data-tab="recent" data-i18n="recent">الأخيرة</button></nav>
+   <div class="layout">
+    <section class="player-column">
+     <div id="player-box" class="player-box">
+      <video id="video" playsinline webkit-playsinline preload="none"></video>
+      <div id="player-placeholder"><span class="play-orbit">▶</span><h2 data-i18n="pick">اختر ما تحب مشاهدته</h2><p data-i18n="pickHint">اختر قناة أو فيلمًا لبدء التشغيل</p></div>
+      <div id="playback-message" class="playback-message" hidden></div>
+      <button id="exit-full" class="exit-full" hidden data-i18n="exitFull">خروج من ملء الشاشة</button>
+      <div class="video-controls" id="video-controls" hidden>
+       <input id="seek" type="range" min="0" max="100" value="0" aria-label="Seek" hidden>
+       <div class="control-row"><button id="previous" aria-label="Previous">⏮</button><button id="play-pause" aria-label="Play or pause">Ⅱ</button><button id="next" aria-label="Next">⏭</button><span id="time">LIVE</span><button id="mute" aria-label="Mute">♪</button><button id="full" aria-label="Fullscreen">⛶</button></div>
+      </div>
+     </div>
+     <div class="now"><div><span class="eyebrow" data-i18n="now">الآن على شاشتك</span><h2 id="now-title" data-i18n="noSelection">لم يتم اختيار محتوى</h2><p id="now-meta" class="subtle"></p></div><button id="favorite-current" class="quiet" aria-label="Favorite" hidden>☆</button></div>
+     <div class="play-options"><label><span data-i18n="format">صيغة البث</span><select id="format"><option value="auto">Auto · HLS → TS</option><option value="m3u8">HLS</option><option value="ts">MPEG-TS</option></select></label><button id="retry" data-i18n="retry">إعادة المحاولة</button><button id="stop" data-i18n="stop">إيقاف</button></div>
+     <div id="epg" class="epg" hidden></div>
+    </section>
+    <section class="browse">
+     <div class="search-row"><input id="search" type="search" placeholder="ابحث عن قناة أو عنوان…" autocomplete="off"><button id="keyboard" class="quiet" aria-label="Keyboard" hidden>⌨</button><button id="refresh" class="quiet" aria-label="Refresh">↻</button></div>
+     <div class="filter-row"><select id="category" aria-label="Category"></select><span id="count" class="subtle"></span></div>
+     <div id="list" class="cards"></div><button id="more" class="load-more" hidden data-i18n="more">عرض المزيد</button>
+    </section>
+   </div>
+  </section>
+  <div id="notice" class="notice" role="status" hidden></div>
+ </main>
+ <footer><span>Magdi IPTV <b>0.1</b></span><span data-i18n="footer">مشغّل شخصي • لا يتضمن قنوات</span></footer>
+ <dialog id="settings-dialog"><div class="dialog-header"><h2 data-i18n="account">الحساب والإعدادات</h2><button class="quiet" id="close-settings" aria-label="Close">✕</button></div>
+  <form id="account-form"><label><span data-i18n="source">نوع المصدر</span><select id="source-mode"><option value="xtream">Xtream Codes</option><option value="m3u">M3U URL</option></select></label>
+   <div id="xtream-fields"><label><span data-i18n="server">عنوان السيرفر (يشمل البورت إن لزم)</span><input id="host" type="url" dir="ltr" placeholder="http://example.com:80" autocomplete="off"></label><label><span data-i18n="username">اسم المستخدم</span><input id="username" dir="ltr" autocomplete="off"></label><label><span data-i18n="password">كلمة السر</span><input id="password" type="password" dir="ltr" autocomplete="new-password"></label><small data-i18n="passwordHint">اتركها فارغة للاحتفاظ بكلمة السر المحفوظة لنفس الحساب.</small></div>
+   <div id="m3u-fields" hidden><label><span data-i18n="playlist">رابط قائمة M3U</span><input id="playlist" type="url" dir="ltr" placeholder="https://example.com/list.m3u"></label></div>
+   <p id="form-status" role="status"></p><div class="form-actions"><button type="submit" class="primary" data-i18n="saveConnect">حفظ واتصال</button><button type="button" id="save-only" data-i18n="save">حفظ فقط</button></div>
+  </form>
+  <div class="settings-extras"><label class="switch"><input id="background" type="checkbox" checked><span data-i18n="background">استمرار الصوت عند مغادرة الشاشة</span></label><button id="setup-auto" data-i18n="autoSetup">إعداد Android Auto</button><button id="export-log" data-i18n="export">تصدير سجل التشخيص</button><button id="forget" class="danger" data-i18n="forget">حذف الحساب المحفوظ</button></div>
+  <p class="subtle" data-i18n="private">بيانات الحساب محفوظة على جهازك. لا تُرسل إلى خدمة خاصة بالتطبيق.</p><details><summary data-i18n="about">عن التطبيق والتراخيص</summary><p>Magdi IPTV is a personal WebView player. Embedded IPTVnator backend © 4gray, MIT. HLS.js: Apache 2.0. MPEGTS.js: Apache 2.0. Includes the user's Magdi Tube shell adaptations. Android Auto integration is experimental. No content is included.</p><button type="button" id="show-licenses">Open-source notices</button><pre id="license-text" hidden style="white-space:pre-wrap;direction:ltr;text-align:left"></pre></details>
+ </dialog>
+ <dialog id="episodes-dialog"><div class="dialog-header"><h2 id="series-title"></h2><button id="close-episodes" class="quiet">✕</button></div><select id="season" aria-label="Season"></select><div id="episodes" class="cards"></div></dialog>
+ <dialog id="keyboard-dialog"><div class="dialog-header"><input id="keyboard-input" aria-label="Search"><button id="keyboard-done" class="primary" data-i18n="search">بحث</button><button id="keyboard-close" class="quiet">✕</button></div><div id="keys"></div><div class="keyboard-bottom"><button id="keys-language">عربي / EN</button><button id="keys-space" data-i18n="space">مسافة</button><button id="keys-delete">⌫</button></div></dialog>
+ <script src="vendor/hls.min.js"></script><script src="vendor/mpegts.js"></script><script src="playback_state.js"></script><script src="i18n.js"></script><script src="app.js"></script>
+</body></html>

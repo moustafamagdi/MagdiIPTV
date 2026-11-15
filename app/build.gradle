@@ -1,0 +1,34 @@
+plugins { id 'com.android.application' }
+def hasPersonalSigning = rootProject.file('.private/signing/magdi-release.p12').exists() && System.getenv('MAGDI_STORE_PASSWORD')
+android {
+ namespace 'com.magdi.iptv'
+ compileSdk 36
+ buildToolsVersion '36.0.0'
+ defaultConfig { applicationId 'com.magdi.iptv'; minSdk 30; targetSdk 36; versionCode 2; versionName '0.1.1-preview' }
+ signingConfigs { personal { storeFile rootProject.file('.private/signing/magdi-release.p12'); storePassword System.getenv('MAGDI_STORE_PASSWORD'); keyAlias 'magdi-mirror'; keyPassword System.getenv('MAGDI_STORE_PASSWORD') } }
+ buildTypes { release { if(hasPersonalSigning) signingConfig signingConfigs.personal }; debug { if(hasPersonalSigning) signingConfig signingConfigs.personal } }
+ testOptions { unitTests.includeAndroidResources = true }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_11; targetCompatibility JavaVersion.VERSION_11 }
+ sourceSets { main { assets.srcDir layout.buildDirectory.dir('generated/privateAssets') } }
+ androidResources { noCompress 'js','css','html' }
+}
+tasks.register('privateSeed') {
+ doLast {
+  def destination=layout.buildDirectory.dir('generated/privateAssets').get().asFile
+  if(System.getenv('MAGDI_INCLUDE_TEST_ACCOUNT') == '1') {
+   if(!rootProject.file('.private/provider.json').exists()) throw new GradleException('Personal provisioning file is missing')
+   copy { from rootProject.file('.private/provider.json'); into destination; rename { 'initial-account.json' } }
+  } else {
+   delete new File(destination,'initial-account.json')
+  }
+ }
+}
+tasks.named('preBuild') { dependsOn 'privateSeed' }
+dependencies {
+ implementation project(':backend')
+ implementation files('libs/aauto.aar')
+ implementation 'com.android.support:support-v4:25.3.1'
+ implementation 'com.android.support:recyclerview-v7:25.3.1'
+ testImplementation 'junit:junit:4.13.2'
+ testImplementation 'org.robolectric:robolectric:4.14.1'
+}

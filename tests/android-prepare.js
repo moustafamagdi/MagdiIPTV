@@ -1,0 +1,1 @@
+(async()=>{const before=await api('config');const seeded={configured:before.configured,hasPassword:before.hasPassword};await api('save',{mode:'xtream',host:'http://10.0.2.2:8787',username:'demo',password:'demo'});account=await api('config');return {firstRunProvisioning:seeded,syntheticAccountSaved:account.configured&&account.hasPassword};})()

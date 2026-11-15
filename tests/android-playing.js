@@ -1,0 +1,1 @@
+(async()=>{if($('workspace').hidden)await connectAccount();await changeTab('live');await play(filtered[0]);await new Promise(r=>setTimeout(r,3500));return {state:app.state(),decodedFrames:v.getVideoPlaybackQuality().totalVideoFrames,audioBytes:v.webkitAudioDecodedByteCount,videoWidth:v.videoWidth,videoHeight:v.videoHeight};})()
