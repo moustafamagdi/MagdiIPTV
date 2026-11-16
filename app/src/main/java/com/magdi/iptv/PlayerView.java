@@ -74,7 +74,7 @@ public final class PlayerView extends FrameLayout {
     JSONObject answer=new JSONObject();
     try{
      JSONObject args=new JSONObject(payload);Object value;
-     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("version","0.1.4").put("background",background);
+     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("version","0.1.5").put("background",background);
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)){boolean copy="copyLogs".equals(method),ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone){android.app.Activity activity=(android.app.Activity)getContext();if(copy)Diagnostics.copy(activity,ar);else Diagnostics.export(activity,ar);}});value=true;}
      else if("setup".equals(method)){String language=args.optString("language","ar");timer.post(()->{if(phone)getContext().startActivity(new Intent(getContext(),InstallSetupActivity.class).putExtra("language",language));});value=true;}

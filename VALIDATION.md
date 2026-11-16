@@ -70,3 +70,9 @@ Evidence in this workspace: `logs/android-flows.json`, `logs/android-extra.json`
 - Playback uses device WebView codecs. Synthetic H.264/AAC success does not establish compatibility with every provider codec, DRM or container. There is no transcoder.
 - Playback checks are short functional tests, not an overnight soak or network-roaming test.
 - The personal APK intentionally includes a plaintext first-run provisioning asset as authorized. Installed account storage is encrypted. The clean APK and source archive must pass the private-value scan before delivery. Updating an existing installation preserves its saved account.
+
+## 0.1.5 fullscreen control
+
+The user confirmed car channel playback, Next, Previous and Pause, and reported that the fullscreen icon entered fullscreen but could only be exited through the separate Exit fullscreen button. The handler always requested fullscreen=true. It now toggles the current state and exposes aria-pressed; the dedicated exit and Back still work.
+
+Nine focused checks in tests/fullscreen-toggle.mjs passed using Chromium touch at 1000 x 500 and 412 x 915: entry, same-button exit, dedicated exit, Back, and continued playback. These are local synthetic playback checks, not a physical car retest. The 0.1.4 embedded-picker change is retained.

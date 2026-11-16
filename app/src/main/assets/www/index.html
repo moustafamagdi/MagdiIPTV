@@ -20,7 +20,7 @@
       <button id="exit-full" class="exit-full" hidden data-i18n="exitFull">خروج من ملء الشاشة</button>
       <div class="video-controls" id="video-controls" hidden>
        <input id="seek" type="range" min="0" max="100" value="0" aria-label="Seek" hidden>
-       <div class="control-row"><button id="previous" aria-label="Previous">⏮</button><button id="play-pause" aria-label="Play or pause">Ⅱ</button><button id="next" aria-label="Next">⏭</button><span id="time">LIVE</span><button id="mute" aria-label="Mute">♪</button><button id="full" aria-label="Fullscreen">⛶</button></div>
+       <div class="control-row"><button id="previous" aria-label="Previous">⏮</button><button id="play-pause" aria-label="Play or pause">Ⅱ</button><button id="next" aria-label="Next">⏭</button><span id="time">LIVE</span><button id="mute" aria-label="Mute">♪</button><button id="full" aria-pressed="false" aria-label="Fullscreen">⛶</button></div>
       </div>
      </div>
      <div class="now"><div><span class="eyebrow" data-i18n="now">الآن على شاشتك</span><h2 id="now-title" data-i18n="noSelection">لم يتم اختيار محتوى</h2><p id="now-meta" class="subtle"></p></div><button id="favorite-current" class="quiet" aria-label="Favorite" hidden>☆</button></div>
@@ -37,7 +37,7 @@
   <div id="notice" class="notice" role="status" hidden></div>
  </main>
  <div id="selection-feedback" class="selection-feedback" role="status" aria-live="polite" hidden><span class="feedback-indicator" aria-hidden="true"></span><div class="feedback-copy"><strong id="selection-title"></strong><span id="selection-state"></span></div><button id="show-player" data-i18n="showPlayer">عرض المشغّل</button></div>
- <footer><span>Magdi IPTV <b>0.1.4</b></span><span data-i18n="footer">مشغّل شخصي • لا يتضمن قنوات</span></footer>
+ <footer><span>Magdi IPTV <b>0.1.5</b></span><span data-i18n="footer">مشغّل شخصي • لا يتضمن قنوات</span></footer>
  <dialog id="settings-dialog"><div class="dialog-header"><h2 data-i18n="account">الحساب والإعدادات</h2><button class="quiet" id="close-settings" aria-label="Close">✕</button></div>
   <form id="account-form"><label><span data-i18n="source">نوع المصدر</span><select id="source-mode"><option value="xtream">Xtream Codes</option><option value="m3u">M3U URL</option></select></label>
    <div id="xtream-fields"><label><span data-i18n="server">عنوان السيرفر (يشمل البورت إن لزم)</span><input id="host" type="url" dir="ltr" placeholder="http://example.com:80" autocomplete="off"></label><label><span data-i18n="username">اسم المستخدم</span><input id="username" dir="ltr" autocomplete="off"></label><label><span data-i18n="password">كلمة السر</span><input id="password" type="password" dir="ltr" autocomplete="new-password"></label><small data-i18n="passwordHint">اتركها فارغة للاحتفاظ بكلمة السر المحفوظة لنفس الحساب.</small></div>
