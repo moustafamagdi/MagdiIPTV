@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Magdi IPTV</title><link rel="stylesheet" href="style.css"></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>MM IPTV</title><link rel="stylesheet" href="style.css"></head>
 <body>
  <header class="top"><div class="brand"><span class="brand-icon">▶</span><div><strong>Magdi <b>IPTV</b></strong><small data-i18n="tagline">قنواتك، في مكان واحد</small></div></div><div class="top-actions"><button id="language" class="quiet">EN</button><button id="settings" class="quiet" data-i18n="settings">الإعدادات</button></div></header>
  <main>
@@ -37,7 +37,7 @@
   <div id="notice" class="notice" role="status" hidden></div>
  </main>
  <div id="selection-feedback" class="selection-feedback" role="status" aria-live="polite" hidden><span class="feedback-indicator" aria-hidden="true"></span><div class="feedback-copy"><strong id="selection-title"></strong><span id="selection-state"></span></div><button id="show-player" data-i18n="showPlayer">عرض المشغّل</button></div>
- <footer><span>Magdi IPTV <b>0.1.5</b></span><span data-i18n="footer">مشغّل شخصي • لا يتضمن قنوات</span></footer>
+ <footer><span>MM IPTV <b>0.1.5</b></span><span data-i18n="footer">مشغّل شخصي • لا يتضمن قنوات</span></footer>
  <dialog id="settings-dialog"><div class="dialog-header"><h2 data-i18n="account">الحساب والإعدادات</h2><button class="quiet" id="close-settings" aria-label="Close">✕</button></div>
   <form id="account-form"><label><span data-i18n="source">نوع المصدر</span><select id="source-mode"><option value="xtream">Xtream Codes</option><option value="m3u">M3U URL</option></select></label>
    <div id="xtream-fields"><label><span data-i18n="server">عنوان السيرفر (يشمل البورت إن لزم)</span><input id="host" type="url" dir="ltr" placeholder="http://example.com:80" autocomplete="off"></label><label><span data-i18n="username">اسم المستخدم</span><input id="username" dir="ltr" autocomplete="off"></label><label><span data-i18n="password">كلمة السر</span><input id="password" type="password" dir="ltr" autocomplete="new-password"></label><small data-i18n="passwordHint">اتركها فارغة للاحتفاظ بكلمة السر المحفوظة لنفس الحساب.</small></div>
@@ -45,7 +45,7 @@
    <p id="form-status" role="status"></p><div class="form-actions"><button type="submit" class="primary" data-i18n="saveConnect">حفظ واتصال</button><button type="button" id="save-only" data-i18n="save">حفظ فقط</button></div>
   </form>
   <div class="settings-extras"><label class="switch"><input id="background" type="checkbox" checked><span data-i18n="background">استمرار الصوت عند مغادرة الشاشة</span></label><button id="setup-auto" data-i18n="autoSetup">إعداد Android Auto</button><button id="copy-log" data-i18n="copyLog">نسخ سجل التشخيص</button><button id="export-log" data-i18n="export">تصدير سجل التشخيص</button><button id="forget" class="danger" data-i18n="forget">حذف الحساب المحفوظ</button></div>
-  <p class="subtle" data-i18n="private">بيانات الحساب محفوظة على جهازك. لا تُرسل إلى خدمة خاصة بالتطبيق.</p><details><summary data-i18n="about">عن التطبيق والتراخيص</summary><p>Magdi IPTV is a personal WebView player. Embedded IPTVnator backend © 4gray, MIT. HLS.js: Apache 2.0. MPEGTS.js: Apache 2.0. Includes the user's Magdi Tube shell adaptations. Android Auto integration is experimental. No content is included.</p><button type="button" id="show-licenses">Open-source notices</button><pre id="license-text" hidden style="white-space:pre-wrap;direction:ltr;text-align:left"></pre></details>
+  <p class="subtle" data-i18n="private">بيانات الحساب محفوظة على جهازك. لا تُرسل إلى خدمة خاصة بالتطبيق.</p><details><summary data-i18n="about">عن التطبيق والتراخيص</summary><p>MM IPTV is a personal WebView player. Embedded IPTVnator backend © 4gray, MIT. HLS.js: Apache 2.0. MPEGTS.js: Apache 2.0. Includes the user's Magdi Tube shell adaptations. Android Auto integration is experimental. No content is included.</p><button type="button" id="show-licenses">Open-source notices</button><pre id="license-text" hidden style="white-space:pre-wrap;direction:ltr;text-align:left"></pre></details>
  </dialog>
  <dialog id="episodes-dialog"><div class="dialog-header"><h2 id="series-title"></h2><button id="close-episodes" class="quiet">✕</button></div><select id="season" aria-label="Season"></select><div id="episodes" class="cards"></div></dialog>
  <dialog id="keyboard-dialog"><div class="dialog-header"><input id="keyboard-input" aria-label="Search"><button id="keyboard-done" class="primary" data-i18n="search">بحث</button><button id="keyboard-close" class="quiet">✕</button></div><div id="keys"></div><div class="keyboard-bottom"><button id="keys-language">عربي / EN</button><button id="keys-space" data-i18n="space">مسافة</button><button id="keys-delete">⌫</button></div></dialog>

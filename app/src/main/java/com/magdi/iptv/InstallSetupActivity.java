@@ -16,7 +16,7 @@ public final class InstallSetupActivity extends Activity {
   panel.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars());v.setPadding(pad+bars.left,pad+bars.top,pad+bars.right,pad+bars.bottom);return insets;});
   ScrollView scroll=new ScrollView(this);scroll.addView(panel);setContentView(scroll);
   TextView title=new TextView(this);title.setText(ar?"King Installer • إعداد Android Auto":"King Installer • Android Auto setup");title.setTextSize(22);panel.addView(title);
-  TextView help=new TextView(this);help.setText(ar?"طريقة King Installer الكلاسيكية مدمجة هنا. أعد تثبيت Magdi IPTV، ثم افتحه وافحص النتيجة. ستحتاج موافقة نافذة تثبيت أندرويد.\n\nللطرق المتقدمة يمكنك إرسال نفس النسخة إلى تطبيق King Installer الكامل، إذا كان مثبتًا.":"The classic King Installer method is built in. Reinstall Magdi IPTV, then reopen it and check the result. Android will ask you to confirm installation.\n\nFor advanced methods, send this version to the full King Installer app if installed.");help.setTextSize(16);panel.addView(help);
+  TextView help=new TextView(this);help.setText(ar?"طريقة King Installer الكلاسيكية مدمجة هنا. أعد تثبيت MM IPTV، ثم افتحه وافحص النتيجة. ستحتاج موافقة نافذة تثبيت أندرويد.\n\nللطرق المتقدمة يمكنك إرسال نفس النسخة إلى تطبيق King Installer الكامل، إذا كان مثبتًا.":"The classic King Installer method is built in. Reinstall MM IPTV, then reopen it and check the result. Android will ask you to confirm installation.\n\nFor advanced methods, send this version to the full King Installer app if installed.");help.setTextSize(16);panel.addView(help);
   status=new TextView(this);status.setTextSize(16);panel.addView(status);
   install=action(panel,ar?"إعادة التثبيت • King المدمج":"Reinstall • built-in King method",()->prepare(false));
   king=action(panel,"King Installer",()->{if(InstallSetup.kingAvailable(this)){new android.app.AlertDialog.Builder(this).setMessage(ar?"سيُرسل ملف التطبيق الحالي إلى King Installer. إذا كانت نسختك شخصية، فالملف يتضمن إعداد حسابك الأول.":"Send the current APK to King Installer. A personal APK includes its first-run account settings.").setNegativeButton(ar?"إلغاء":"Cancel",null).setPositiveButton(ar?"متابعة":"Continue",(d,w)->prepare(true)).show();}else{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(InstallSetup.KING_RELEASES)));}catch(RuntimeException e){fail(e);}}});
@@ -32,7 +32,7 @@ public final class InstallSetupActivity extends Activity {
   if(busy)return;
   if(!useKing&&!getPackageManager().canRequestPackageInstalls()){
    Diagnostics.event("Install setup: waiting for user to allow installs from this app");
-   Toast.makeText(this,ar?"اسمح بالتثبيت من Magdi IPTV ثم ارجع واضغط إعادة تثبيت":"Allow installs from Magdi IPTV, then return and tap Reinstall",Toast.LENGTH_LONG).show();
+   Toast.makeText(this,ar?"اسمح بالتثبيت من MM IPTV ثم ارجع واضغط إعادة تثبيت":"Allow installs from MM IPTV, then return and tap Reinstall",Toast.LENGTH_LONG).show();
    try{startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+getPackageName())));}catch(RuntimeException e){fail(e);}return;
   }
   busy=true;install.setEnabled(false);king.setEnabled(false);

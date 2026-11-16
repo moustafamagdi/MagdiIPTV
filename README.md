@@ -1,4 +1,4 @@
-# Magdi IPTV
+# MM IPTV
 
 Android IPTV player for your own Xtream subscription or M3U playlist. The app supports Arabic and English, favorites, and playback history. Package: `com.magdi.iptv`. Requires Android 11 or later.
 
@@ -13,7 +13,7 @@ Live playback supports HLS and MPEG-TS. Movie and series playback depends on the
 
 ## Android Auto
 
-Android Auto projection uses a legacy integration and compatibility varies with the host and device. Settings includes a King Installer setup screen for the current release. The separate **Magdi IPTV Audio** entry controls content already selected in the app.
+Android Auto projection uses a legacy integration and compatibility varies with the host and device. Settings includes a King Installer setup screen for the current release. The separate **MM IPTV Audio** entry controls content already selected in the app.
 
 Settings can copy or export playback diagnostics without including account credentials, provider URLs or channel names.
 

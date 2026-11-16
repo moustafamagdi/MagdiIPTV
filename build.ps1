@@ -15,7 +15,10 @@ try {
  if($Checks){$tasks+=@(':backend:check',':app:lintRelease',':app:testDebugUnitTest')}
  & "$toolBase/gradle/gradle-8.11.1/bin/gradle.bat" --no-daemon @tasks
  if($LASTEXITCODE -ne 0){throw 'Build or checks failed'}
- $name=if($Personal){'Magdi-IPTV-0.1.6-personal.apk'}else{'Magdi-IPTV-0.1.6.apk'}
+ $version=[regex]::Match((Get-Content 'app/build.gradle' -Raw), "versionName '([^']+)'").Groups[1].Value
+ if(!$version){throw 'Could not read the APK version'}
+ $name=if($Personal){"MM-IPTV-$version-personal.apk"}else{"MM-IPTV-$version.apk"}
+ [IO.Directory]::CreateDirectory((Join-Path $PSScriptRoot 'dist')) | Out-Null
  Copy-Item app/build/outputs/apk/release/app-release.apk "dist/$name"
  & "$toolBase/sdk/build-tools/36.0.0/apksigner.bat" verify --print-certs "dist/$name"
  if($LASTEXITCODE -ne 0){throw 'APK signature invalid'}

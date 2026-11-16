@@ -56,12 +56,12 @@ public final class MediaCardService extends MediaBrowserServiceCompat {
  }
  @Override public void onLoadChildren(String parent,Result<List<MediaBrowserCompat.MediaItem>> result){
   if(!ROOT.equals(parent)){result.sendResult(Collections.emptyList());return;}
-  MediaDescriptionCompat description=new MediaDescriptionCompat.Builder().setMediaId(CURRENT).setTitle(ar()?"صوت الفيديو الحالي":"Current video audio").setSubtitle(available?(ar()?"تشغيل وإيقاف مؤقت":"Play and pause"):(ar()?"افتح Magdi IPTV واختر فيديو أولًا":"Open Magdi IPTV and choose a video first")).build();
+  MediaDescriptionCompat description=new MediaDescriptionCompat.Builder().setMediaId(CURRENT).setTitle(ar()?"صوت الفيديو الحالي":"Current video audio").setSubtitle(available?(ar()?"تشغيل وإيقاف مؤقت":"Play and pause"):(ar()?"افتح MM IPTV واختر فيديو أولًا":"Open MM IPTV and choose a video first")).build();
   result.sendResult(Collections.singletonList(new MediaBrowserCompat.MediaItem(description,available?MediaBrowserCompat.MediaItem.FLAG_PLAYABLE:0)));
  }
  private void publish(){
   if(session==null)return;State state=observations.get(selected.get());boolean now=state!=null&&state.ready;
-  if(!metadataPublished||now!=available){metadataPublished=true;session.setMetadata(new MediaMetadataCompat.Builder().putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID,CURRENT).putString(MediaMetadataCompat.METADATA_KEY_TITLE,"Magdi IPTV").putString(MediaMetadataCompat.METADATA_KEY_ARTIST,now?(ar()?"صوت الفيديو الحالي":"Current video audio"):(ar()?"اختر فيديو في Magdi IPTV أولًا":"Choose a video in Magdi IPTV first")).build());}
+  if(!metadataPublished||now!=available){metadataPublished=true;session.setMetadata(new MediaMetadataCompat.Builder().putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID,CURRENT).putString(MediaMetadataCompat.METADATA_KEY_TITLE,"MM IPTV").putString(MediaMetadataCompat.METADATA_KEY_ARTIST,now?(ar()?"صوت الفيديو الحالي":"Current video audio"):(ar()?"اختر فيديو في MM IPTV أولًا":"Choose a video in MM IPTV first")).build());}
   long actions=now?PlaybackStateCompat.ACTION_PLAY|PlaybackStateCompat.ACTION_PAUSE|PlaybackStateCompat.ACTION_PLAY_PAUSE|PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID:0;
   session.setPlaybackState(new PlaybackStateCompat.Builder().setActions(actions).setState(!now?PlaybackStateCompat.STATE_NONE:state.playing?PlaybackStateCompat.STATE_PLAYING:PlaybackStateCompat.STATE_PAUSED,now?state.position:0,now&&state.playing?1f:0f).build());
   if(now!=available){available=now;notifyChildrenChanged(ROOT);}
