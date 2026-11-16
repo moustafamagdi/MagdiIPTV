@@ -76,3 +76,13 @@ Evidence in this workspace: `logs/android-flows.json`, `logs/android-extra.json`
 The user confirmed car channel playback, Next, Previous and Pause, and reported that the fullscreen icon entered fullscreen but could only be exited through the separate Exit fullscreen button. The handler always requested fullscreen=true. It now toggles the current state and exposes aria-pressed; the dedicated exit and Back still work.
 
 Nine focused checks in tests/fullscreen-toggle.mjs passed using Chromium touch at 1000 x 500 and 412 x 915: entry, same-button exit, dedicated exit, Back, and continued playback. These are local synthetic playback checks, not a physical car retest. The 0.1.4 embedded-picker change is retained.
+
+## 0.1.6 audio icon
+The media browser service now has a dedicated gold headphones icon with a white
+TV mark. The video/projection and phone application keep the existing green TV icon.
+Both services remain enabled. Playback and account handling are unchanged.
+Signed clean release/debug builds, backend checks, app tests and release lint passed.
+The clean APK has no account seed or supplied private provider values. Host launcher
+appearance and cache refresh remain a device check. No personal APK was rebuilt
+for this icon-only update; the clean APK can update an existing personal installation
+without deleting its saved account.

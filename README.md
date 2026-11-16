@@ -7,8 +7,8 @@ The first release combines the MIT-licensed IPTVnator embedded Java backend with
 ## Install
 
 - `dist/Magdi-IPTV-0.1.5-personal.apk`: private first-run account provisioning, as requested. Keep this APK private: its provisioning asset contains the supplied account. The password can be changed in Settings. The installed account is encrypted using Android Keystore.
-- `dist/Magdi-IPTV-0.1.5.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
-- Both APKs have the same package, version and personal signing certificate; updates preserve app data. Neither replaces Magdi Tube.
+- `dist/Magdi-IPTV-0.1.6.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
+- The clean 0.1.6 update and earlier personal APK share the package and signing certificate; installing the update preserves the saved account. Neither replaces Magdi Tube.
 
 Open the app and tap **Connect subscription / اتصال بالاشتراك**. Settings support server address (including optional port), username and password, or a remote M3U URL. The configured account is never submitted to an app-operated server. Local storage contains favorites/history; M3U favorites may contain their stream URLs.
 
