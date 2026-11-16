@@ -1,8 +1,8 @@
 $ErrorActionPreference='Stop'
 Set-Location (Split-Path $PSScriptRoot)
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$destination=Join-Path (Get-Location) 'dist/Magdi-IPTV-0.1.3-source.zip'
-$entries=@('app/src','app/libs','app/build.gradle','backend/src','backend/build.gradle','gradle','gradlew','gradlew.bat','licenses','scripts','tests','README.md','VALIDATION.md','build.gradle','settings.gradle','gradle.properties','build.ps1','start-browser-test.ps1','test-emulator.ps1','.gitignore','.gitattributes')
+$destination=Join-Path (Get-Location) 'dist/Magdi-IPTV-0.1.4-source.zip'
+$entries=@('app/src','app/libs','app/build.gradle','backend/src','backend/build.gradle','gradle','gradlew','gradlew.bat','licenses','scripts','tests','README.md','VALIDATION.md','PICKER-FIX.md','build.gradle','settings.gradle','gradle.properties','build.ps1','start-browser-test.ps1','test-emulator.ps1','.gitignore','.gitattributes')
 $output=[IO.File]::Open($destination,[IO.FileMode]::Create)
 $archive=[IO.Compression.ZipArchive]::new($output,[IO.Compression.ZipArchiveMode]::Create)
 try {

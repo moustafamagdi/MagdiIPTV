@@ -6,8 +6,8 @@ The first release combines the MIT-licensed IPTVnator embedded Java backend with
 
 ## Install
 
-- `dist/Magdi-IPTV-0.1.3-personal.apk`: private first-run account provisioning, as requested. Keep this APK private: its provisioning asset contains the supplied account. The password can be changed in Settings. The installed account is encrypted using Android Keystore.
-- `dist/Magdi-IPTV-0.1.3.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
+- `dist/Magdi-IPTV-0.1.4-personal.apk`: private first-run account provisioning, as requested. Keep this APK private: its provisioning asset contains the supplied account. The password can be changed in Settings. The installed account is encrypted using Android Keystore.
+- `dist/Magdi-IPTV-0.1.4.apk`: identical application without account provisioning. Enter your own Xtream account or M3U URL.
 - Both APKs have the same package, version and personal signing certificate; updates preserve app data. Neither replaces Magdi Tube.
 
 Open the app and tap **Connect subscription / اتصال بالاشتراك**. Settings support server address (including optional port), username and password, or a remote M3U URL. The configured account is never submitted to an app-operated server. Local storage contains favorites/history; M3U favorites may contain their stream URLs.
@@ -43,3 +43,5 @@ Third-party licenses are under `licenses/` and are shown in Settings. The backen
 The source archive excludes signing keys and provider credentials. For another workstation, set the tool paths in `build.ps1`, supply your own `.private/signing/magdi-release.p12` with alias `magdi-mirror` and its password in `.private/signing/store-password.txt`, or adapt the signing configuration to your key. A clean build needs no provider file. Personal provisioning optionally reads `.private/provider.json` with `mode`, `host`, `username` and `password`. The included legacy `aauto.aar` was carried over from the user's existing project for private testing; its public redistribution rights are not established. Review `licenses/` before public distribution.
 
 The GitHub repository contains source and test fixtures. Its release APK is the clean variant. Personal APKs, signing keys, subscription data, generated build directories and local logs are excluded from Git.
+
+Category, season, stream-format and source choices use embedded scrollable dialogs in 0.1.4 to avoid native Android popup windows in the projected host. See PICKER-FIX.md for diagnosis and test scope.
