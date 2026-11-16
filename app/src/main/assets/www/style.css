@@ -39,3 +39,21 @@ form .select-picker,#season-picker{width:100%}
 .choice-option{flex-shrink:0;text-align:start;min-height:52px;white-space:normal;overflow-wrap:anywhere;padding:12px 16px}
 .choice-option[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-dark);color:var(--accent)}
 .choice-option:active{background:#25604e}
+
+/* One in-document keyboard for search and all account text fields. */
+.settings-input-row{display:flex;gap:6px;align-items:center}
+.settings-input-row input{flex:1;min-width:0;width:0}
+.settings-input-row .field-keyboard{flex:none;min-width:48px;font-size:22px;padding:6px}
+#keyboard-dialog{width:min(850px,98vw);padding:12px;max-height:96dvh;overflow:auto}
+.keyboard-label{font-size:13px;color:var(--muted);margin-bottom:6px}
+#keyboard-dialog .dialog-header{gap:6px;margin-bottom:8px}
+#keyboard-dialog button{min-height:42px;padding:6px 10px}
+#keyboard-input{min-height:42px;width:0;font-size:16px}
+#keys .keyrow{gap:4px;margin-bottom:4px}
+#keys button{min-height:42px;padding:5px 0;font-size:18px}
+.keyboard-tools,.keyboard-edit{display:flex;gap:4px;margin-top:6px}
+.keyboard-tools button,.keyboard-edit button{flex:1;min-width:0}
+.keyboard-edit button{font-size:16px}
+#keys-clear{flex:2}
+#keyboard-dialog button[aria-pressed="true"]{background:var(--accent-dark);border-color:var(--accent);color:var(--accent)}
+@media(max-width:480px){#keyboard-dialog button{padding:5px 7px}#keyboard-reveal{font-size:12px}#keys button{padding:5px 0}}

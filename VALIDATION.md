@@ -86,3 +86,13 @@ The clean APK has no account seed or supplied private provider values. Host laun
 appearance and cache refresh remain a device check. No personal APK was rebuilt
 for this icon-only update; the clean APK can update an existing personal installation
 without deleting its saved account.
+
+## 0.1.7 settings keyboard
+
+The embedded keyboard now serves server address, username, password, M3U URL and search. Car fields are readonly/inputmode=none to avoid relying on a native IME. Each settings field also has an explicit keyboard button on the phone; regular phone typing stays available. Source selection remains an embedded picker.
+
+English uppercase/lowercase, Arabic (including previously missing dal/thal), ASCII digits, printable punctuation, URL shortcuts, cursor movement, backspace, clear and space are included. Password entry is masked unless explicitly revealed, and resets to masked on every open. Closing clears the temporary editor. Done updates the selected field without saving the account; Cancel/Back discards the draft and leaves the settings dialog open.
+
+Validation: 16 keyboard checks passed with Chromium touch (800 x 400 car-sized landscape and 412 x 915 portrait), and the same 16 passed in the installed Android 16/API 36 WebView using DOM activation. An additional ADB touch opened the server field, typed 123 and applied it; the settings dialog remained open and the editor draft was cleared. Synthetic data only. Local screenshots: logs/settings-keyboard-landscape.png and logs/keyboard-native-open.png.
+
+The 13 embedded picker checks and both responsive layouts passed. Signed clean release/debug builds, backend checks (61), Android tests (23), release lint and signature verification passed. No physical Samsung/Android Auto retest is claimed. Release APK contains no first-run subscription seed.
