@@ -1,4 +1,4 @@
-Magdi IPTV 0.1.7 - Personal build
+Magdi IPTV 0.1.8
 
 IPTVnator embedded Java backend
 Source: https://github.com/4gray/iptvnator/tree/master/tv-shell/android/backend
@@ -228,3 +228,8 @@ Legacy Auto SDK binary: personal experimental dependency. Public redistribution 
 
 
 King Installer integration: built-in classic self-reinstall method and optional APK handoff to the separate King Installer app. Root/Shizuku are not embedded. Upstream: https://github.com/fcaronte/KingInstaller
+
+Optional public playlist directories (downloaded on request, not bundled):
+Free-TV/IPTV — https://github.com/Free-TV/IPTV
+iptv-org/iptv — https://github.com/iptv-org/iptv (directory: Unlicense)
+Stream content remains with its respective owners. Directory licensing does not grant rights to third-party video. Availability and geographic restrictions vary.

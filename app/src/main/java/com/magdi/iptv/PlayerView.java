@@ -68,13 +68,13 @@ public final class PlayerView extends FrameLayout {
  private final class Bridge {
   @JavascriptInterface public void request(String id,String method,String payload){
    if(closed||id==null||!id.matches("[0-9]{1,12}"))return;
-   if("play".equals(method))timer.post(()->{for(PlayerView view:new ArrayList<>(views))if(view!=null&&view!=PlayerView.this)view.pauseMedia();MediaCardService.select(PlayerView.this);});
-   java.util.concurrent.ExecutorService worker=Arrays.asList("connect","catalog","episodes","epg","playlist").contains(method)?requests:controls;
+   if("play".equals(method)||"publicplay".equals(method))timer.post(()->{for(PlayerView view:new ArrayList<>(views))if(view!=null&&view!=PlayerView.this)view.pauseMedia();MediaCardService.select(PlayerView.this);});
+   java.util.concurrent.ExecutorService worker=Arrays.asList("connect","catalog","episodes","epg","playlist","publicplaylist").contains(method)?requests:controls;
    worker.execute(()->{
     JSONObject answer=new JSONObject();
     try{
      JSONObject args=new JSONObject(payload);Object value;
-     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("version","0.1.7").put("background",background);
+     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("version","0.1.8").put("background",background);
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)){boolean copy="copyLogs".equals(method),ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone){android.app.Activity activity=(android.app.Activity)getContext();if(copy)Diagnostics.copy(activity,ar);else Diagnostics.export(activity,ar);}});value=true;}
      else if("setup".equals(method)){String language=args.optString("language","ar");timer.post(()->{if(phone)getContext().startActivity(new Intent(getContext(),InstallSetupActivity.class).putExtra("language",language));});value=true;}

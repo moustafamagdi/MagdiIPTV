@@ -1,0 +1,48 @@
+export async function run(call){
+ const checks=[],wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const evaluate=async expression=>{const r=await call('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true,userGesture:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;};
+ const check=async(name,expression)=>{if(!await evaluate(expression))throw Error(name);checks.push({name,passed:true});};
+ const until=async expression=>{for(let i=0;i<120;i++){if(await evaluate(expression))return;await wait(100);}throw Error('Timeout: '+expression);};
+ await call('Emulation.setDeviceMetricsOverride',{width:800,height:400,deviceScaleFactor:1,mobile:false});await call('Emulation.setTouchEmulationEnabled',{enabled:true});
+ const tap=async selector=>{
+  await evaluate('document.querySelector('+JSON.stringify(selector)+").scrollIntoView({block:'center',behavior:'instant'})");await wait(40);
+  const p=await evaluate('(()=>{const r=document.querySelector('+JSON.stringify(selector)+').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()');
+  await call('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...p,id:1}]});await call('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await wait(60);
+ };
+ await evaluate("fetch('/test/reset-account?empty').then(()=>{localStorage.clear();location.reload()})");await wait(700);await until("typeof account!=='undefined'&&!account.configured");
+ await check('First launch offers public channels without forcing account setup',"!$('settings-dialog').open&&!$('public-open').hidden&&!$('welcome').hidden");
+ await tap('#public-open');await tap('#public-preset-picker');
+ await check('Preset choices use the embedded picker',"$('choice-dialog').open&&document.querySelectorAll('.choice-option').length===3&&$('public-preset').hidden");
+ await tap('.choice-option:nth-child(2)');await tap('#public-load');await until("!$('workspace').hidden&&!$('public-load').disabled");
+ await check('Public browsing works with no account and hides subscription-only tabs',"publicSource==='egypt'&&mode==='m3u'&&items.length===2&&!account.configured&&document.querySelector('[data-tab=vod]').hidden&&document.querySelector('[data-tab=series]').hidden");
+ await tap('#list .pick');await until("v.readyState>=2&&!v.paused&&v.currentTime>0.5");
+ await check('Public channel plays through its own bridge method',"current.name==='egypt News'&&playbackPhase==='playing'");
+ await tap('#favorite-current');await tap('#category-picker');await tap('.choice-option:nth-child(3)');
+ await check('Public groups filter correctly',"filtered.length===1&&filtered[0].name==='egypt Nature'");
+ await evaluate("$('search').value='missing';filter()");await check('Search can show an empty result',"filtered.length===0");
+ await evaluate("$('search').value='';filter()");
+ await tap('#public-switch');await tap('#public-preset-picker');await tap('.choice-option:nth-child(3)');await tap('#public-load');await until("publicSource==='saudi'&&!$('public-load').disabled");
+ await check('Favorites and history are separate for each preset',"favorites.length===0&&recent.length===0&&v.paused");
+ await tap('#public-switch');await tap('#public-preset-picker');await tap('.choice-option:nth-child(2)');await tap('#public-load');await until("publicSource==='egypt'&&!$('public-load').disabled");
+ await check('Returning to a preset restores its favorites',"favorites.length===1&&favorites[0].name==='egypt News'&&recent.length===1");
+ await evaluate("fetch('/test/public?error')");await tap('#refresh');await until("!$('public-load').disabled");
+ await check('Failed refresh explains retry and preserves the previous library',"$('public-dialog').open&&$('public-status').textContent===t('publicError')&&items.length===2&&publicSource==='egypt'");
+ await evaluate("fetch('/test/public?empty')");await tap('#public-load');await until("!$('public-load').disabled");await check('Empty list is not reported as connected',"$('public-dialog').open&&$('public-status').textContent===t('publicError')");
+ await evaluate("fetch('/test/public')");await tap('#public-load');await until("!$('public-dialog').open");
+ await check('Retry fetches the list again',"publicSource==='egypt'&&favorites.length===1");
+ await evaluate("fetch('/test/public?delay=1200')");await tap('#public-switch');await tap('#public-load');await tap('#public-close');
+ await evaluate("fetch('/test/reset-account').then(async()=>{account=await api('config');await connectAccount();})");await until("!$('workspace').hidden&&mode==='xtream'&&!$('connect').disabled");await wait(1300);
+ await check('Canceled public response cannot replace subscription view',"publicSource===''&&mode==='xtream'&&source==='fixture'&&!$('public-dialog').open");
+ await evaluate("(async()=>{window.savedAccountBefore=JSON.stringify(await api('config'));await fetch('/test/public')})()");
+ await tap('#public-switch');await tap('#public-load');await until("publicSource==='egypt'&&!$('public-load').disabled");
+ await check('Loading public channels does not change saved subscription',"(async()=>JSON.stringify(await api('config'))===savedAccountBefore)()");
+ await tap('#subscription-switch');await until("mode==='xtream'&&!$('connect').disabled");
+ await check('One tap returns to subscription and restores movie/series tabs',"publicSource===''&&!document.querySelector('[data-tab=vod]').hidden&&!document.querySelector('[data-tab=series]').hidden&&favorites.length===0");
+ await tap('#list .pick');await until("v.readyState>=2&&!v.paused&&v.currentTime>0.5");await check('Subscription playback still works after public mode',"current.name==='Atlas News HD'");
+ await evaluate("stop();language='en';applyLanguage();openPublic();EmbeddedSelects.refresh()");
+ await check('English source labels are translated',"$('public-preset-picker').textContent.includes('Egypt')&&$('public-title').textContent==='Free public channels'");
+ await call('Emulation.setDeviceMetricsOverride',{width:412,height:915,deviceScaleFactor:1,mobile:true});
+ await check('Public dialog fits phone width',"document.documentElement.scrollWidth<=innerWidth&&$('public-dialog').getBoundingClientRect().right<=innerWidth");
+ await evaluate("cancelPublic();language='ar';applyLanguage()");
+ return {checks};
+}

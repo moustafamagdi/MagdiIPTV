@@ -57,3 +57,5 @@ form .select-picker,#season-picker{width:100%}
 #keys-clear{flex:2}
 #keyboard-dialog button[aria-pressed="true"]{background:var(--accent-dark);border-color:var(--accent);color:var(--accent)}
 @media(max-width:480px){#keyboard-dialog button{padding:5px 7px}#keyboard-reveal{font-size:12px}#keys button{padding:5px 0}}
+
+.source-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;color:var(--accent);font-size:13px}.source-bar>div{display:flex;gap:8px;flex-wrap:wrap}.source-bar button{font-size:12px;min-height:42px}#public-dialog label{display:block;margin:12px 0 6px}#public-preset-picker{width:100%}#public-load{width:100%;min-height:48px}#public-status{color:#ffce91;min-height:1.4em}#public-preset{width:100%}

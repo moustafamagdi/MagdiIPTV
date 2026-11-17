@@ -16,7 +16,7 @@ export async function run(call){
  try{
   await until("account.configured");
   await evaluate("(async()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());await connectAccount();stop();await changeTab('series');})()");
-  check('Every native select is hidden and replaced',await evaluate("[...document.querySelectorAll('select')].every(s=>s.hidden&&getComputedStyle(s).display==='none')&&document.querySelectorAll('.select-picker').length===4"));
+  check('Every native select is hidden and replaced',await evaluate("[...document.querySelectorAll('select')].every(s=>s.hidden&&getComputedStyle(s).display==='none')&&document.querySelectorAll('.select-picker').length===document.querySelectorAll('select').length"));
   await evaluate("window.pickerChanges=0;$('category').addEventListener('change',()=>pickerChanges++)");
   await tap('#category-picker');
   check('Series categories open inside the document',await evaluate("$('choice-dialog').open&&document.querySelectorAll('.choice-option').length===3"));

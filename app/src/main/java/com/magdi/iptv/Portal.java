@@ -14,6 +14,7 @@ final class Portal {
  private final AccountStore store;
  private final WebBackend backend=new WebBackend(new HttpFetcher(),"/api");
  private final StreamProxy streams;
+ private final PublicPlaylists publicLists=new PublicPlaylists(this::loadPlaylist);
  Portal(Context c,StreamProxy p){store=new AccountStore(c);streams=p;}
  static String enc(String value){try{return URLEncoder.encode(value,"UTF-8").replace("+","%20");}catch(java.io.UnsupportedEncodingException e){throw new IllegalStateException(e);}}
  static String validHost(String text){URI u=URI.create(text.trim());if(!("http".equals(u.getScheme())||"https".equals(u.getScheme()))||u.getHost()==null||u.getRawUserInfo()!=null||u.getFragment()!=null)throw new IllegalArgumentException("Enter a valid HTTP or HTTPS server address");return text.trim().replaceAll("/+$","");}
@@ -28,6 +29,11 @@ final class Portal {
   return payload;
  }
  Object call(String method,JSONObject args) throws Exception {
+  if("publicplaylist".equals(method))return publicLists.load(args.getString("preset"));
+  if("publicplay".equals(method)){
+   String url=publicLists.selected(args.getString("preset"),args.getString("url"));
+   streams.clear();return streams.register(url);
+  }
   JSONObject a=store.read();
   switch(method){
    case "config":return new JSONObject().put("configured",a.length()>0).put("host",a.optString("host")).put("username",a.optString("username")).put("mode",a.optString("mode","xtream")).put("playlist",a.optString("playlist")).put("hasPassword",!a.optString("password").isEmpty());
@@ -54,8 +60,7 @@ final class Portal {
    case "episodes":return xtream(a,"get_series_info",args);
    case "epg":return xtream(a,"get_short_epg",args);
    case "playlist": {
-    Map<String,List<String>> q=new HashMap<>();q.put("targetId",Collections.singletonList(target(a.getString("playlist"))));
-    JSONObject result=new JSONObject(backend.handle("GET","/parse",q,null).bodyText());if(result.has("error"))throw new java.io.IOException("Unable to load playlist");return result;
+    return loadPlaylist(a.getString("playlist"));
    }
    case "play": {
     String url;
@@ -69,6 +74,11 @@ final class Portal {
    }
    default:throw new IllegalArgumentException("Unknown request");
   }
+ }
+ private JSONObject loadPlaylist(String url) throws Exception {
+  Map<String,List<String>> q=new HashMap<>();q.put("targetId",Collections.singletonList(target(url)));
+  JSONObject result=new JSONObject(backend.handle("GET","/parse",q,null).bodyText());
+  if(result.has("error"))throw new java.io.IOException("Unable to load playlist");return result;
  }
  private static String sourceId(JSONObject a) throws Exception {byte[] data=java.security.MessageDigest.getInstance("SHA-256").digest((a.optString("host")+"|"+a.optString("username")+"|"+a.optString("playlist")).getBytes(StandardCharsets.UTF_8));StringBuilder s=new StringBuilder();for(int i=0;i<8;i++)s.append(String.format(java.util.Locale.ROOT,"%02x",data[i]));return s.toString();}
 }

@@ -8,7 +8,7 @@ window.EmbeddedSelects=(()=>{
  const close=document.createElement('button');close.type='button';close.className='quiet';close.textContent='✕';close.setAttribute('aria-label','Close');
  const list=document.createElement('div');list.className='choice-list';
  header.append(title,close);dialog.append(header,list);
- function label(select){const ar=document.documentElement.lang==='ar';if(select.id==='category')return ar?'الأقسام':'Categories';if(select.id==='season')return ar?'الموسم':'Season';return select.closest('label')?.querySelector('span')?.textContent||select.getAttribute('aria-label')||'Choose';}
+ function label(select){const ar=document.documentElement.lang==='ar';if(select.id==='public-preset')return ar?'القوائم العامة':'Public playlists';if(select.id==='category')return ar?'الأقسام':'Categories';if(select.id==='season')return ar?'الموسم':'Season';return select.closest('label')?.querySelector('span')?.textContent||select.getAttribute('aria-label')||'Choose';}
  function sync(select){
   const button=entries.get(select);if(!button)return;
   button.textContent=(select.selectedOptions[0]?.textContent||'—')+' ▾';

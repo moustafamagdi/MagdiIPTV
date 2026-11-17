@@ -5,17 +5,25 @@ const media=path.resolve('tests/media');
 const names=['Atlas News HD','Nature & Discovery','Cinema One','الوثائقية HD','الرياضة HD','قناة الأخبار'];
 const channel=(name,i)=>({name,stream_id:i+1,category_id:i<3?'1':'2',stream_type:'live'});
 let saved={host:'http://127.0.0.1:8787',username:'demo',password:'demo',mode:'xtream'};
-let slowEpg=false;
+let slowEpg=false,publicOptions={delay:0,error:false,empty:false},publicLoads=0;
 const web=path.resolve(process.argv[2]||'app/src/main/assets/www');
 const server=http.createServer(async(req,res)=>{
  const u=new URL(req.url,'http://localhost');
  const json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));};
  if(u.pathname==='/test/slow-epg'){slowEpg=u.searchParams.get('enabled')==='1';return json({slowEpg});}
+ if(u.pathname==='/test/public'){publicOptions={delay:Number(u.searchParams.get('delay')||0),error:u.searchParams.has('error'),empty:u.searchParams.has('empty')};return json({publicLoads});}
+ if(u.pathname==='/test/reset-account'){saved=u.searchParams.has('empty')?{}:{host:'http://127.0.0.1:8787',username:'demo',password:'demo',mode:'xtream'};return json({ok:true});}
  if(u.pathname==='/bridge'){
   let raw='';for await(const chunk of req)raw+=chunk;const {method,args}=JSON.parse(raw);let value;
   try{
    if(method==='environment')value={car:false,background:true};
-   else if(method==='config')value={...saved,configured:!!saved.host,hasPassword:true,password:undefined};
+   else if(method==='config')value={...saved,configured:!!saved.host,hasPassword:!!saved.password,password:undefined};
+   else if(method==='publicplaylist'){
+    publicLoads++;const options={...publicOptions};if(options.delay)await new Promise(r=>setTimeout(r,options.delay));if(options.error)throw Error('Fixture offline');
+    value={playlist:{items:options.empty?[]:[{name:args.preset+' News',url:'http://127.0.0.1:8787/1.m3u8',group:{title:'News'}},{name:args.preset+' Nature',url:'http://127.0.0.1:8787/2.m3u8',group:{title:'Nature'}}]}};
+   }
+   else if(method==='publicplay')value=args.url;
+   else if(method==='forget'){saved={};value=true;}
    else if(method==='save'){saved=args;value=true;}
    else if(method==='connect')value={mode:'xtream',source:'fixture',status:'Active'};
    else if(method==='catalog'||method==='episodes'||method==='epg'){
