@@ -77,3 +77,8 @@ body.fullscreen .player-box.full{position:absolute;inset:0;width:100%;height:100
 .exit-full svg{width:20px;height:20px;pointer-events:none}.exit-full:active{transform:translateY(-50%);background:transparent}.exit-full:focus-visible::before{background:#0008;border-color:#ffffffbb}
 .player-box.full .control-row{flex-wrap:nowrap}.player-box.full .video-controls{padding:28px 12px 8px}
 @media(max-width:400px){.control-row{gap:3px}.control-row button{min-width:40px;width:40px;min-height:44px}.control-row #time{font-size:11px}}
+
+/* Contain gestures at dialog edges, including short and nested dialogs.
+   Lock the page without fixing/reparenting its body or resetting its scroll position. */
+dialog{overscroll-behavior:contain}
+html:has(dialog[open]),html:has(dialog[open]) body{overflow:hidden;overscroll-behavior:none}

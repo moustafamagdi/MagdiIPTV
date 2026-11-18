@@ -51,6 +51,8 @@ On the phone, open **Settings → Log sessions** (also available from the instal
 
 The store keeps the latest **40 parts** for at most **7 days**, deleting the oldest when either limit is reached. Each part is at most **128 KiB**, preserving complete event lines and UTF-8 Arabic text. File work runs on one background queue to preserve event order. Existing logs are imported once; originals are only removed after the import commits successfully. Exported files saved outside the app are not deleted by log retention.
 
+Settings and other dialogs contain scroll gestures at their edges. The background page stays locked while any dialog remains open, including a keyboard or source picker over Settings; closing the last dialog restores normal page scrolling at its existing position.
+
 ## Embedded keyboard
 
 On the car, tap the server address, username, password or M3U URL field to open the embedded keyboard. On the phone, use the keyboard button beside a field or type normally. Arabic/English, uppercase/lowercase, digits and symbols are available. Done applies the draft to the field; Cancel or Back discards it. Use the existing Save button to save the account. Passwords are masked by default with an optional reveal button.
