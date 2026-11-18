@@ -39,7 +39,7 @@ try{
  await check('Native bridge refuses phone playback requests',phone,"await api('play',{type:'live',id:'1',ext:'m3u8'}).then(()=>false,()=>true)");
  const adb=process.env.ADB;if(!adb)throw Error('Set ADB to test disconnect/reconnect');
  const toggle=()=>execFileSync(adb,['-P',process.env.ADB_PORT||'5038','-s',process.env.ADB_DEVICE||'emulator-5560','shell','input','tap','300','70'],{stdio:'pipe'});
- toggle();await until(phone,"!(await api('controllerstate')).connected");
+ toggle();await until(phone,"!(await api('controllerstate')).connected");await until(phone,"$('controller-connection').textContent===t('carDisconnected')");
  await phone("await changeTab('live');selectItem(filtered[0])");await until(phone,"$('controller-alert').open");
  await check('Disconnected selection warns without local playback',phone,"v.paused&&!v.getAttribute('src')&&$('controller-alert').open");
  toggle();await until(phone,"(await api('controllerstate')).connected");await wait(1400);
