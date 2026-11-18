@@ -1,4 +1,4 @@
-MM IPTV 0.1.14
+MM IPTV 0.1.15
 
 IPTVnator embedded Java backend
 Source: https://github.com/4gray/iptvnator/tree/master/tv-shell/android/backend
@@ -224,7 +224,7 @@ Android Support Libraries 25.3.1 - The Android Open Source Project
    limitations under the License.
 
 
-Legacy Auto SDK binary: personal experimental dependency. Public redistribution rights have not been established. This build is not an official Android Auto integration. See licenses/MagdiTube-components.md in the source package.
+Legacy Auto SDK binary: personal experimental dependency. Public redistribution rights have not been established. This build is not an official Android Auto integration. See licenses/MM-Tube-components.md in the source package.
 
 
 King Installer integration: built-in classic self-reinstall method and optional APK handoff to the separate King Installer app. Root/Shizuku are not embedded. Upstream: https://github.com/fcaronte/KingInstaller

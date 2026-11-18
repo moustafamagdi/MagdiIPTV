@@ -39,7 +39,7 @@ public final class InstallSetupActivity extends Activity {
   new Thread(()->{try{
    if(app.getApplicationInfo().splitSourceDirs!=null&&app.getApplicationInfo().splitSourceDirs.length>0)throw new IOException("Split APK unsupported");
    File dir=new File(app.getCacheDir(),"installer");if(!dir.exists()&&!dir.mkdirs())throw new IOException("Cannot create cache");
-   File apk=new File(dir,"Magdi-IPTV.apk");
+   File apk=new File(dir,"MM-IPTV.apk");
    try(InputStream in=new FileInputStream(app.getApplicationInfo().sourceDir);OutputStream out=new FileOutputStream(apk)){byte[] buffer=new byte[65536];int n;while((n=in.read(buffer))!=-1)out.write(buffer,0,n);}
    Uri uri=android.support.v4.content.FileProvider.getUriForFile(app,getPackageName()+".reports",apk);
    runOnUiThread(()->{busy=false;if(isFinishing()||isDestroyed())return;install.setEnabled(true);king.setEnabled(true);launch(uri,useKing);});
