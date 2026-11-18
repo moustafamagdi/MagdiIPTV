@@ -97,7 +97,7 @@ public final class PlayerView extends FrameLayout {
     JSONObject answer=new JSONObject();
     try{
      JSONObject args=new JSONObject(payload);Object value;
-     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.12").put("background",background);
+     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.13").put("background",background);
      else if("artwork".equals(method))value=artwork.register(args.getString("url"));
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)||"logSessions".equals(method)){boolean ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone)Diagnostics.open((android.app.Activity)getContext(),ar);});value=true;}
@@ -117,9 +117,9 @@ public final class PlayerView extends FrameLayout {
  }
  private void reply(String id,JSONObject value){if(!closed)web.evaluateJavascript("window.nativeReply("+id+","+value+")",null);}
  boolean documentReady(){return documentReady;}
- void carConnection(long epoch,long request){controllerChanged();if(closed)return;pendingResume=false;if(epoch==0){web.evaluateJavascript("window.Controller&&Controller.connection(0,"+request+")",null);web.evaluateJavascript("if(window.__magdiPlayback)window.__magdiPlayback.stop();document.querySelectorAll('video,audio').forEach(v=>{v.pause();v.removeAttribute('src');v.load()})",null);proxy.clear();}else web.evaluateJavascript("window.Controller&&Controller.connection("+epoch+","+request+")",null);}
+ void carConnection(long epoch,long request){controllerChanged();if(closed)return;pendingResume=false;if(epoch==0){hideFullscreen();web.evaluateJavascript("window.Controller&&Controller.connection(0,"+request+")",null);web.evaluateJavascript("if(window.__magdiPlayback)window.__magdiPlayback.stop();document.querySelectorAll('video,audio').forEach(v=>{v.pause();v.removeAttribute('src');v.load()})",null);proxy.clear();}else web.evaluateJavascript("window.Controller&&Controller.connection("+epoch+","+request+")",null);}
  void accountChanged(long request){controllerChanged();if(!closed)web.evaluateJavascript("window.Controller&&Controller.accountChanged("+request+")",null);}
- void controllerCommand(JSONObject command){if(!closed)web.evaluateJavascript("window.Controller&&Controller.receive("+command+")",null);}
+ void controllerCommand(JSONObject command){if(closed)return;if(fullscreen!=null&&"fullscreen".equals(command.optString("action"))){hideFullscreen();return;}if("stop".equals(command.optString("action")))hideFullscreen();web.evaluateJavascript("window.Controller&&Controller.receive("+command+")",null);}
  private static String safeError(Exception e){
   if(e instanceof IllegalArgumentException)return "Check the server address and required fields.";
   if(e instanceof JSONException)return "Unexpected server response. Check the address, account and network.";
@@ -161,9 +161,9 @@ public final class PlayerView extends FrameLayout {
  private void refreshPicture(){if(closed||!active||!isAttachedToWindow()||!isShown())return;web.onResume();web.requestLayout();web.postInvalidateOnAnimation();if(fullscreen!=null)fullscreen.postInvalidateOnAnimation();web.evaluateJavascript("window.dispatchEvent(new Event('resize'))",null);web.postVisualStateCallback(android.os.SystemClock.uptimeMillis(),new WebView.VisualStateCallback(){public void onComplete(long id){if(!closed&&active)web.postInvalidateOnAnimation();}});}
  @Override public void onWindowFocusChanged(boolean focus){if(!focus&&web!=null&&background)cover();super.onWindowFocusChanged(focus);if(focus&&web!=null){schedulePicture();timer.postDelayed(()->tryResume(),300);}}
  private void showFullscreen(View v,WebChromeClient.CustomViewCallback cb){
-  if(fullscreen!=null){cb.onCustomViewHidden();return;}fullscreenCallback=cb;
+  if(fullscreen!=null){cb.onCustomViewHidden();return;}web.evaluateJavascript("window.app&&window.app.fullscreen(false)",null);fullscreenCallback=cb;
   fullscreen=new FrameLayout(getContext()){@Override public void dispatchWindowVisibilityChanged(int visibility){if(visibility!=VISIBLE&&background&&!closed)cover();super.dispatchWindowVisibilityChanged(background&&!closed?VISIBLE:visibility);}};
-  fullscreen.setBackgroundColor(0xff000000);fullscreen.addView(v,new FrameLayout.LayoutParams(-1,-1));Button exit=new Button(getContext());exit.setText("Exit / خروج");exit.setTextSize(18);FrameLayout.LayoutParams p=new FrameLayout.LayoutParams(dp(128),dp(56),Gravity.TOP|Gravity.END);p.topMargin=dp(8);p.setMarginEnd(dp(8));fullscreen.addView(exit,p);exit.setOnClickListener(x->hideFullscreen());web.setVisibility(INVISIBLE);addView(fullscreen,new FrameLayout.LayoutParams(-1,-1));
+  fullscreen.setBackgroundColor(0xff000000);fullscreen.addView(v,new FrameLayout.LayoutParams(-1,-1));android.widget.ImageButton exit=new android.widget.ImageButton(getContext());exit.setImageResource(R.drawable.ic_fullscreen_close);exit.setBackgroundResource(R.drawable.fullscreen_close_background);exit.setContentDescription("Exit fullscreen / الخروج من ملء الشاشة");exit.setTag("native-fullscreen-exit");exit.setPadding(dp(14),dp(14),dp(14),dp(14));exit.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);exit.setElevation(0);exit.setStateListAnimator(null);FrameLayout.LayoutParams p=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.CENTER_VERTICAL|Gravity.LEFT);p.leftMargin=dp(2);fullscreen.addView(exit,p);exit.setOnClickListener(x->hideFullscreen());web.setVisibility(INVISIBLE);addView(fullscreen,new FrameLayout.LayoutParams(-1,-1));
  }
  private int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
  private void hideFullscreen(){if(fullscreen==null)return;FrameLayout old=fullscreen;fullscreen=null;removeView(old);old.removeAllViews();web.setVisibility(VISIBLE);WebChromeClient.CustomViewCallback cb=fullscreenCallback;fullscreenCallback=null;if(cb!=null)cb.onCustomViewHidden();schedulePicture();}

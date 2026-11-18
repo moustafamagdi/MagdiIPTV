@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+const port=process.env.CDP_PORT||'9225',fixture=process.env.FIXTURE_PORT||'8787';
+const pages=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json(),sockets=[],checks=[];
+async function client(phone){const page=pages.find(p=>p.type==='page'&&p.title.includes('Controller')===phone);if(!page)throw Error('Start ControllerHarnessActivity');const ws=new WebSocket(page.webSocketDebuggerUrl);sockets.push(ws);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});let serial=0;const pending=new Map();ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);if(!p)return;pending.delete(m.id);clearTimeout(p.timer);m.error?p.reject(m.error):p.resolve(m.result);}};const call=async(method,params={})=>{const id=++serial;return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('CDP timeout')),20000);pending.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,method,params}));});};const evaluate=async code=>{const r=await call('Runtime.evaluate',{expression:'(async()=>{'+code+'})()',awaitPromise:true,returnByValue:true,userGesture:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;};return {call,evaluate};}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+try{
+ const p=await client(true),c=await client(false),phone=p.evaluate,car=c.evaluate;
+ const until=async(fn,expr)=>{for(let i=0;i<120;i++){if(await fn('return '+expr))return;await wait(100);}throw Error('Timeout: '+expr);};
+ const check=async(name,fn,expr)=>{if(!await fn('return '+expr))throw Error(name);checks.push(name);console.log('PASS '+name);};
+ const full=async()=>{await until(phone,"!$('controller-full').disabled");await phone("$('controller-full').click()");await wait(350);};
+ await phone(`await api('save',{mode:'xtream',host:'http://10.0.2.2:${fixture}',username:'demo',password:'demo'});account=await api('config');await connectAccount();await changeTab('series');await openSeries(filtered[0]);document.querySelector('#episodes .pick').click();`);
+ await until(car,'v.readyState>=3&&!v.paused');await until(phone,"!$('controller-full').disabled");
+ await car('window.fullscreenVideo=v;window.fullscreenSource=v.currentSrc;');
+ for(const [w,h,lang] of [[960,540,'en'],[800,480,'ar'],[1280,480,'en'],[360,780,'ar']]){
+  await phone(`Harness.setCarViewport(${w},${h})`);await until(car,`document.documentElement.clientWidth===${w}&&document.documentElement.clientHeight===${h}`);await car(`language='${lang}';applyLanguage();`);await full();
+  await check(`${w}x${h}: full player covers viewport and hides library controls`,car,"$('player-box').classList.contains('full')&&Math.abs($('player-box').getBoundingClientRect().height-innerHeight)<2&&Math.abs($('player-box').getBoundingClientRect().width-innerWidth)<2&&getComputedStyle(document.querySelector('.browse')).visibility==='hidden'&&document.querySelector('.browse').inert");
+  await check(`${w}x${h}: hit testing finds only the player, no stray episode buttons`,car,"(()=>{const box=$('player-box');for(let y=24;y<innerHeight;y+=30)for(let x=16;x<innerWidth;x+=30)if(!box.contains(document.elementFromPoint(x,y)))return false;return true;})()");
+  await check(`${w}x${h}: one original transport bar and unobstructed exit`,car,"!v.controls&&document.querySelectorAll('.video-controls').length===1&&['play-pause','full','exit-full'].every(id=>{const el=$(id),r=el.getBoundingClientRect();return r.width>=40&&r.height>=40&&el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));})&&$('exit-full').getBoundingClientRect().left<5&&$('exit-full').getAttribute('aria-label')===t('exitFull')");
+  if(w===960&&process.env.SCREENSHOT){const image=await c.call('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(process.env.SCREENSHOT,Buffer.from(image.data,'base64'));}
+  await full();await check(`${w}x${h}: remote exit restores browsing without replacing video`,car,"!$('player-box').classList.contains('full')&&!document.querySelector('.browse').inert&&getComputedStyle(document.querySelector('.browse')).visibility==='visible'&&v===fullscreenVideo&&v.currentSrc===fullscreenSource");
+ }
+ await phone('Harness.setCarViewport(960,540)');await until(car,'innerWidth===960&&innerHeight===540');
+ await car("$('details-dialog').showModal()");await full();await check('Remote fullscreen dismisses top-layer details instead of showing an extra Play',car,"!$('details-dialog').open&&$('player-box').classList.contains('full')");
+ await car('v.currentTime=1;resume()');const before=await car('return v.currentTime');await until(phone,`(await api('controllerstate')).playback.time>${before}+.4`);checks.push('Phone progress continues through fullscreen');
+ await until(phone,"!$('controller-pause').disabled");await phone("$('controller-pause').click()");await until(car,'v.paused&&!v.ended');await until(phone,"!$('controller-play').disabled");await full();await check('Exiting fullscreen does not resume paused video',car,'v.paused');await full();await car("$('exit-full').click()");await check('Side close button exits without changing paused state',car,"!$('player-box').classList.contains('full')&&v.paused");
+ await full();await car('app.back()');await check('Back restores the normal player and browsing controls',car,"!$('player-box').classList.contains('full')&&!document.querySelector('.browse').inert");
+ await full();await car('await v.requestFullscreen()');await until(car,'!!document.fullscreenElement');await check('Native fullscreen removes remote layout before entering',car,"!$('player-box').classList.contains('full')");await full();await until(car,'!document.fullscreenElement');await check('Phone fullscreen button exits native fullscreen without nesting CSS fullscreen',car,"!$('player-box').classList.contains('full')");
+ await full();await phone("$('controller-stop').click()");await until(car,'!current');await check('Stop restores the browsing layout',car,"!$('player-box').classList.contains('full')&&!document.querySelector('.browse').inert");
+ await check('Phone remains a silent controller',phone,"v.paused&&!v.getAttribute('src')&&v.getVideoPlaybackQuality().totalVideoFrames===0");
+ console.log(JSON.stringify({passed:checks.length,checks}));
+}finally{for(const ws of sockets)ws.close();}

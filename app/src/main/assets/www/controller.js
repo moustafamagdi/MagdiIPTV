@@ -60,7 +60,7 @@ window.Controller=(()=>{
    switch(packet.action){
     case 'pause':pause();break;case 'resume':resume();break;case 'stop':stop();break;
     case 'next':skip(1);break;case 'previous':skip(-1);break;case 'retry':if(current)play(current);break;
-    case 'mute':v.muted=!v.muted;break;case 'fullscreen':full(!$('player-box').classList.contains('full'));break;
+    case 'mute':v.muted=!v.muted;break;case 'fullscreen':toggleFullscreen();break;
     case 'seek':if(current?.type!=='live'&&Number.isFinite(v.duration)&&v.seekable.length){const target=Math.max(0,Math.min(100,Number(packet.percent)||0))/100*v.duration;v.currentTime=Math.max(v.seekable.start(0),Math.min(v.seekable.end(v.seekable.length-1),target));}break;
    }publish();return;
   }

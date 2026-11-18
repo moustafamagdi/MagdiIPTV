@@ -19,6 +19,8 @@ Keep MM IPTV open on the car screen. The phone shows whether the car player is r
 
 Without an available car player, selecting content displays a connection notice. Selections are not queued for later. Disconnecting or closing/leaving the car player stops playback and cancels pending selections; reconnecting does not resume automatically. Closing the phone interface does not stop an available car player. Phone browsing can use a different library while the controller continues to show what is playing on the car.
 
+Fullscreen from the phone keeps only the car player and its own transport bar visible. Library tiles, episode Play buttons and page controls are hidden and inert until exit. The video element stays in place; entering/exiting does not reload or resume it. A small circular close button on the physical left edge exits both remote and native fullscreen; the phone fullscreen button also exits a native video overlay.
+
 ## Posters, channel logos and descriptions
 
 Xtream libraries display provider-supplied channel logos and movie/series posters. Personal and public M3U lists also display `tvg-logo` artwork. Images load as they approach the visible area, are resized and temporarily cached in memory, and keep a placeholder if absent, unsupported or unavailable. Supported artwork is HTTP/HTTPS raster imagery (such as PNG, JPEG and WebP); the app does not search third-party databases for missing images.
@@ -68,3 +70,5 @@ The controller uses native player, connection and media-request generations plus
 Run `node tests/controller-controls-native.mjs` for actual phone-button enablement, dimming, loading/buffering/error/ended, seek, CSS/native fullscreen progress, stale callbacks, reconnect without autoplay, polling faults and phone closure. Set `CDP_PORT`, `FIXTURE_PORT`, `ADB_PORT` and `ADB_DEVICE` for isolated instances. Start the fixture server with `CONTROLLER_MEDIA=1` to use the generated 20-second H.264/AAC clip `tests/media/controller.mp4`. The older clip produced an emulator audio-decoder failure after a long seek; this does not establish real-provider codec compatibility. Synthetic buffering and missing-callback faults are explicitly injected by the test.
 
 Third-party notices are in [licenses/](licenses/) and in the app's Settings.
+
+Fullscreen layout regressions: `tests/fullscreen-layout-native.mjs` uses the debug harness to size the actual car WebView at 960×540, 800×480, 1280×480 and 360×780. It checks viewport coverage, hit targets, hidden/inert browsing controls, Arabic/English exit labels, modal dismissal, unchanged media element, paused-state preservation, progress, native/remote exit and Stop. Use an isolated emulator large enough to host those test views (2560×1000 at density 160).

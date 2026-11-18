@@ -5,4 +5,4 @@ const strings={
 };
 let language=localStorage.getItem('language')||'ar';
 function t(key){return strings[language][key]||key;}
-function applyLanguage(){document.documentElement.lang=language;document.documentElement.dir=language==='ar'?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));document.getElementById('language').textContent=language==='ar'?'EN':'عربي';document.getElementById('search').placeholder=t('searchHint');}
+function applyLanguage(){document.documentElement.lang=language;document.documentElement.dir=language==='ar'?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));document.querySelectorAll('[data-i18n-label]').forEach(e=>{e.setAttribute('aria-label',t(e.dataset.i18nLabel));e.title=t(e.dataset.i18nLabel);});document.getElementById('language').textContent=language==='ar'?'EN':'عربي';document.getElementById('search').placeholder=t('searchHint');}

@@ -13,6 +13,7 @@ public final class ControllerHarnessActivity extends android.app.Activity {
   toggle.setOnClickListener(v->{connected=!connected;if(connected)car.resume();else car.pause();toggle.setText(connected?"Disconnect test car":"Connect test car");});
  }
  public final class HarnessControls {
+  @android.webkit.JavascriptInterface public void setCarViewport(int width,int height){runOnUiThread(()->{float density=getResources().getDisplayMetrics().density;car.setLayoutParams(width>0&&height>0?new android.widget.LinearLayout.LayoutParams(Math.round(width*density),Math.round(height*density)):new android.widget.LinearLayout.LayoutParams(0,-1,1));});}
   @android.webkit.JavascriptInterface public void closePhone(){runOnUiThread(()->{phone.close();((android.view.ViewGroup)phone.getParent()).removeView(phone);});}
  }
  protected void onResume(){super.onResume();phone.resume();if(connected)car.resume();}
