@@ -35,7 +35,11 @@ Use **↻** to fetch a fresh copy. A failed refresh leaves the previous library 
 
 Android Auto projection uses a legacy integration and compatibility varies with the host and device. Settings includes a King Installer setup screen for the current release. The separate **Magdi IPTV Audio** entry controls content already selected in the app.
 
-Settings can copy or export playback diagnostics without including account credentials, provider URLs or channel names.
+On the phone, open **Settings → Log sessions** (also available from the installation setup screen). Select a session and part, then **Copy selected part** or **Export selected part**. Both include the complete selected part and the same diagnostic header, without truncation. They use a snapshot captured when the part is selected; **Refresh list** loads newer events. Account credentials, provider addresses, stream URLs, tokens and channel names are excluded.
+
+**Start new session** starts a manual log without deleting older sessions or changing playback. App processes and car connections start sessions automatically. Car reconnections within five minutes stay in the same session; temporary screen covers such as the camera do not create sessions. The current part is selected by default, with session type, date, time, part number and size displayed.
+
+The store keeps the latest **40 parts** for at most **7 days**, deleting the oldest when either limit is reached. Each part is at most **128 KiB**, preserving complete event lines and UTF-8 Arabic text. File work runs on one background queue to preserve event order. Existing logs are imported once; originals are only removed after the import commits successfully. Exported files saved outside the app are not deleted by log retention.
 
 ## Embedded keyboard
 

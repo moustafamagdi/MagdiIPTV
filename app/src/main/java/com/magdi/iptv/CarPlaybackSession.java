@@ -11,15 +11,17 @@ final class CarPlaybackSession {
  private static MutableContextWrapper context;
  private static Object host;
  static PlayerView attach(Context car,Object token){
+  Diagnostics.carConnected();
   if(page==null){context=new MutableContextWrapper(car);page=new PlayerView(context);Diagnostics.event("Car playback session created");}
   else {context.setBaseContext(car);Diagnostics.event("Car playback session reused");}
   if(page.getParent() instanceof ViewGroup)((ViewGroup)page.getParent()).removeView(page);
   host=token;return page;
  }
  static boolean isHost(Object token){return host==token;}
- static void connectionLost(){if(page!=null)page.pause();}
+ static void connectionLost(){Diagnostics.carDisconnected();if(page!=null)page.pause();}
  static void detach(Object token){
   if(host!=token||page==null)return;
+  Diagnostics.carDisconnected();
   page.prepareDetach();
   if(page.getParent() instanceof ViewGroup)((ViewGroup)page.getParent()).removeView(page);
   Context app=context.getApplicationContext();context.setBaseContext(new ContextThemeWrapper(app,android.R.style.Theme_Material_NoActionBar));host=null;

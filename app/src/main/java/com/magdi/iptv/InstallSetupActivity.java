@@ -21,8 +21,7 @@ public final class InstallSetupActivity extends Activity {
   install=action(panel,ar?"إعادة التثبيت • King المدمج":"Reinstall • built-in King method",()->prepare(false));
   king=action(panel,"King Installer",()->{if(InstallSetup.kingAvailable(this)){new android.app.AlertDialog.Builder(this).setMessage(ar?"سيُرسل ملف التطبيق الحالي إلى King Installer. إذا كانت نسختك شخصية، فالملف يتضمن إعداد حسابك الأول.":"Send the current APK to King Installer. A personal APK includes its first-run account settings.").setNegativeButton(ar?"إلغاء":"Cancel",null).setPositiveButton(ar?"متابعة":"Continue",(d,w)->prepare(true)).show();}else{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(InstallSetup.KING_RELEASES)));}catch(RuntimeException e){fail(e);}}});
   action(panel,ar?"فحص النتيجة":"Check result",()->{InstallSetup.observe(this,"manual check");refresh();});
-  action(panel,ar?"نسخ اللوج":"Copy log",()->Diagnostics.copy(this,ar));
-  action(panel,ar?"تصدير اللوج":"Export log",()->Diagnostics.export(this,ar));
+  action(panel,ar?"جلسات اللوج":"Log sessions",()->Diagnostics.open(this,ar));
   action(panel,ar?"رجوع":"Back",this::finish);
  }
  private Button action(LinearLayout panel,String label,Runnable run){Button b=new Button(this);b.setText(label);b.setTextSize(18);b.setAllCaps(false);b.setMinHeight((int)(60*getResources().getDisplayMetrics().density));panel.addView(b,new LinearLayout.LayoutParams(-1,-2));b.setOnClickListener(v->run.run());return b;}

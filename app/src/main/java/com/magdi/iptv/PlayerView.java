@@ -89,9 +89,9 @@ public final class PlayerView extends FrameLayout {
     JSONObject answer=new JSONObject();
     try{
      JSONObject args=new JSONObject(payload);Object value;
-     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.9").put("background",background);
+     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.10").put("background",background);
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
-     else if("logs".equals(method)||"copyLogs".equals(method)){boolean copy="copyLogs".equals(method),ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone){android.app.Activity activity=(android.app.Activity)getContext();if(copy)Diagnostics.copy(activity,ar);else Diagnostics.export(activity,ar);}});value=true;}
+     else if("logs".equals(method)||"copyLogs".equals(method)||"logSessions".equals(method)){boolean ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone)Diagnostics.open((android.app.Activity)getContext(),ar);});value=true;}
      else if("setup".equals(method)){String language=args.optString("language","ar");timer.post(()->{if(phone)getContext().startActivity(new Intent(getContext(),InstallSetupActivity.class).putExtra("language",language));});value=true;}
      else {value=portal.call(method,args);if("save".equals(method)||"forget".equals(method))timer.post(CarController::accountChanged);}
      answer.put("ok",true).put("value",value==null?JSONObject.NULL:value);

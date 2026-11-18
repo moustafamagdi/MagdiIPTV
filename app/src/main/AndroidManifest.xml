@@ -10,6 +10,7 @@
  <queries><package android:name="com.google.android.projection.gearhead"/><package android:name="com.example.kinginstaller"/><intent><action android:name="android.intent.action.INSTALL_PACKAGE"/><data android:mimeType="application/vnd.android.package-archive"/></intent></queries>
  <application tools:ignore="MissingIntentFilterForMediaSearch" android:name=".Diagnostics" android:label="Magdi IPTV" android:icon="@drawable/ic_iptv" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false" android:usesCleartextTraffic="true" android:hardwareAccelerated="true" android:enableOnBackInvokedCallback="false">
   <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+  <activity android:name=".DiagnosticsActivity" android:exported="false"/>
   <activity android:name=".InstallSetupActivity" android:exported="false"/>
   <receiver android:name=".InstallResultReceiver" android:exported="false"><intent-filter><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter></receiver>
   <service android:name=".PlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>
