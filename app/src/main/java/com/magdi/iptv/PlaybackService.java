@@ -13,6 +13,7 @@ public final class PlaybackService extends Service {
  private static final Map<PlayerView,Boolean> players=new WeakHashMap<>();
  private static boolean requested;
  static void keep(PlayerView view){
+  if(!view.isCarView())return;
   players.put(view,Boolean.TRUE);
   if(requested)return;
   requested=true;

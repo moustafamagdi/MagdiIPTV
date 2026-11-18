@@ -17,6 +17,7 @@ final class CarPlaybackSession {
   host=token;return page;
  }
  static boolean isHost(Object token){return host==token;}
+ static void connectionLost(){if(page!=null)page.pause();}
  static void detach(Object token){
   if(host!=token||page==null)return;
   page.prepareDetach();

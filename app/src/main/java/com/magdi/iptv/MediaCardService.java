@@ -23,6 +23,7 @@ public final class MediaCardService extends MediaBrowserServiceCompat {
   State(boolean playing,boolean muted,boolean ready,long position){this.playing=playing;this.muted=muted;this.ready=ready;this.position=position;}
  }
  static void observe(PlayerView view,boolean playing,boolean muted,boolean ready,long position){
+  if(!view.isCarView())return;
   State old=observations.put(view,new State(playing,muted,ready,position));PlayerView current=selected.get();
   // Muted feed previews must not take the car video's controls. Keep a paused target.
   if(ready&&!muted&&(current==null||(!current.isCarView()&&view.isCarView()))){selected=new WeakReference<>(view);Diagnostics.event("Media card target selected: "+(view.isCarView()?"car":"phone"));}
@@ -30,7 +31,7 @@ public final class MediaCardService extends MediaBrowserServiceCompat {
   if(selected.get()==view)refresh();
  }
  static void paused(PlayerView view){State s=observations.get(view);if(s!=null)observe(view,false,s.muted,s.ready,s.position);}
- static void select(PlayerView view){selected=new WeakReference<>(view);refresh();}
+ static void select(PlayerView view){if(!view.isCarView())return;selected=new WeakReference<>(view);refresh();}
  static PlayerView target(){return selected.get();}
  static boolean retains(PlayerView view){return running.get()!=null&&selected.get()==view;}
  static void forget(PlayerView view){observations.remove(view);if(selected.get()==view)selected=new WeakReference<>(null);refresh();}

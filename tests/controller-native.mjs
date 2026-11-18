@@ -1,0 +1,65 @@
+// Run against the debug-only ControllerHarnessActivity. Uses synthetic account data.
+import {execFileSync} from 'node:child_process';
+const pages=await(await fetch('http://127.0.0.1:9225/json/list')).json();
+const connections=[];
+async function client(phone){
+ const page=pages.find(p=>p.type==='page'&&p.title.includes('Controller')===phone);if(!page)throw Error('Start ControllerHarnessActivity first');
+ const ws=new WebSocket(page.webSocketDebuggerUrl);connections.push(ws);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});let serial=0;const pending=new Map();
+ ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(m.error):p.resolve(m.result);}};
+ return async expression=>{const id=++serial;const result=await new Promise((resolve,reject)=>{pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression:'(async()=>{'+expression+'})()',awaitPromise:true,returnByValue:true,userGesture:true}}));});if(result.exceptionDetails)throw Error(result.exceptionDetails.exception?.description||result.exceptionDetails.text);return result.result.value;};
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms)),checks=[];
+try{
+ const phone=await client(true),car=await client(false);
+ const until=async(client,expression)=>{for(let i=0;i<100;i++){if(await client('return '+expression))return;await wait(200);}throw Error('Timeout: '+expression);};
+ const check=async(name,client,expression)=>{if(!await client('return '+expression))throw Error(name);checks.push(name);console.log('PASS '+name);};
+ await phone("await api('save',{mode:'xtream',host:'http://10.0.2.2:8787',username:'demo',password:'demo'});account=await api('config');await connectAccount();");
+ await until(phone,"(await api('controllerstate')).connected");
+ await check('Phone has controller role and car player is available',phone,"Controller.isPhone()&&(await api('controllerstate')).connected");
+ await phone('selectItem(filtered[0])');await until(car,"current?.id==='1'&&v.readyState>=2&&!v.paused&&v.currentTime>0.5");
+ await check('Selection plays decoded video in car WebView',car,"v.getVideoPlaybackQuality().totalVideoFrames>0");
+ await check('Phone has no media source and zero decoded frames',phone,"v.paused&&!v.getAttribute('src')&&v.getVideoPlaybackQuality().totalVideoFrames===0");
+ await until(phone,"$('controller-title').textContent==='Atlas News HD'");
+ await phone("await Controller.command('pause')");await until(car,'v.paused');await until(phone,"$('controller-play').textContent==='▶'");
+ await check('Pause and state synchronize back to phone',phone,"(await api('controllerstate')).playback.phase==='paused'");
+ await phone("await Controller.command('resume')");await until(car,'!v.paused');
+ await phone("await Controller.command('next')");await until(car,"current?.id==='2'&&v.readyState>=2");
+ await phone("await Controller.command('previous')");await until(car,"current?.id==='1'&&v.readyState>=2");
+ await check('Next and previous follow car playback queue',car,"current.id==='1'");
+ await phone("await changeTab('vod');selectItem(filtered[0])");await until(car,"current?.id==='101'&&v.readyState>=2&&v.duration>0");
+ await phone("await Controller.command('pause');await Controller.command('seek',{percent:50})");await wait(400);
+ await check('Movie seek is applied on the car',car,"v.currentTime>v.duration*.4&&v.currentTime<v.duration*.6");
+ await phone("await Controller.command('fullscreen')");await until(car,"$('player-box').classList.contains('full')");await phone("await Controller.command('fullscreen')");await until(car,"!$('player-box').classList.contains('full')");
+ await check('Remote fullscreen toggles both ways',car,"!$('player-box').classList.contains('full')");
+ await phone("await changeTab('series');await openSeries(filtered[0]);");
+ await phone("document.querySelector('#episodes .pick').click()");await until(car,"current?.id==='301'&&v.readyState>=2");
+ await phone("await Controller.command('next')");await until(car,"current?.id==='302'&&v.readyState>=2");
+ await check('Episode selection and next episode work on the car',car,"current.type==='episode'&&current.id==='302'");
+ await phone("await Controller.command('stop')");await until(car,'current===null&&v.paused');
+ await check('Native bridge refuses phone playback requests',phone,"await api('play',{type:'live',id:'1',ext:'m3u8'}).then(()=>false,()=>true)");
+ const adb=process.env.ADB;if(!adb)throw Error('Set ADB to test disconnect/reconnect');
+ const toggle=()=>execFileSync(adb,['-P','5038','-s','emulator-5560','shell','input','tap','300','70'],{stdio:'pipe'});
+ toggle();await until(phone,"!(await api('controllerstate')).connected");
+ await phone("await changeTab('live');selectItem(filtered[0])");await until(phone,"$('controller-alert').open");
+ await check('Disconnected selection warns without local playback',phone,"v.paused&&!v.getAttribute('src')&&$('controller-alert').open");
+ toggle();await until(phone,"(await api('controllerstate')).connected");await wait(1400);
+ await check('Rejected selection is not queued for reconnection',car,"current===null&&v.paused&&!v.getAttribute('src')");
+ await phone("$('controller-alert').close();selectItem(filtered[0])");await until(car,"current?.id==='1'&&v.readyState>=2&&!v.paused");
+ toggle();await until(phone,"!(await api('controllerstate')).connected");
+ await check('Disconnect stops active car playback',car,"current===null&&v.paused&&!v.getAttribute('src')");
+ await check('Phone remains silent after disconnect',phone,"v.paused&&!v.getAttribute('src')&&v.getVideoPlaybackQuality().totalVideoFrames===0");
+ toggle();await until(phone,"(await api('controllerstate')).connected");
+ await phone("$('controller-alert').close();await changeTab('live')");
+ await car("cache.clear();window.originalControllerTestApi=api;api=(method,args)=>method==='catalog'?new Promise(resolve=>setTimeout(resolve,1600)).then(()=>originalControllerTestApi(method,args)):originalControllerTestApi(method,args);");
+ await phone("selectItem(filtered[0])");await wait(250);toggle();await until(phone,"!(await api('controllerstate')).connected");toggle();await until(phone,"(await api('controllerstate')).connected");await wait(3500);
+ await check('Disconnect during catalog loading cancels deferred playback',car,"current===null&&v.paused&&!v.getAttribute('src')");
+ await phone("selectItem(filtered[0])");await wait(200);await phone("selectItem(filtered[1])");await until(car,"current?.id==='2'&&v.readyState>=2&&!v.paused");await wait(1800);
+ await check('Rapid selections play only the latest requested channel',car,"current.id==='2'");
+ await car("api=originalControllerTestApi;delete window.originalControllerTestApi");
+ await phone("await Controller.command('stop');await api('save',{mode:'m3u',playlist:'http://10.0.2.2:8787/playlist.m3u'});account=await api('config');await connectAccount();selectItem(filtered[0])");
+ await until(car,"current?.name==='Test HLS'&&v.readyState>=2&&!v.paused");
+ await check('Personal M3U selection reaches the car',car,"mode==='m3u'&&publicSource===''");
+ await phone("await Controller.command('stop');await api('save',{mode:'xtream',host:'http://10.0.2.2:8787',username:'demo',password:'demo'});account=await api('config');await connectAccount()");
+ await check('Changing subscription clears old car playback context',car,"source===''&&current===null&&v.paused");
+ console.log(JSON.stringify({passed:checks.length,checks}));
+}finally{for(const ws of connections)ws.close();}

@@ -4,7 +4,7 @@ import {pathToFileURL} from 'node:url';
 const port=process.argv.includes('--android')?'9225':process.env.CDP_PORT||'9224';
 process.argv=process.argv.filter(a=>a!=='--android');
 const pages=await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
-const page=pages.find(p=>p.type==='page');if(!page)throw new Error('No debuggable WebView');
+const page=pages.find(p=>p.type==='page'&&(!process.env.CDP_SURFACE||(process.env.CDP_SURFACE==='phone'?p.title.includes('Controller'):!p.title.includes('Controller'))));if(!page)throw new Error('No debuggable WebView');
 const ws=new WebSocket(page.webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});
 let id=0;const pending=new Map();
 ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);if(p){pending.delete(m.id);clearTimeout(p.timer);m.error?p.reject(m.error):p.resolve(m.result);}}};

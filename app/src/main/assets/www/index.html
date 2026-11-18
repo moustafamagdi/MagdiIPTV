@@ -1,9 +1,15 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Magdi IPTV</title><link rel="stylesheet" href="style.css"></head>
-<body>
+<body class="controller">
  <header class="top"><div class="brand"><span class="brand-icon">▶</span><div><strong>Magdi <b>IPTV</b></strong><small data-i18n="tagline">قنواتك، في مكان واحد</small></div></div><div class="top-actions"><button id="language" class="quiet">EN</button><button id="settings" class="quiet" data-i18n="settings">الإعدادات</button></div></header>
  <main>
+  <section id="controller-panel" class="controller-panel" hidden aria-label="Car controller">
+   <div class="controller-heading"><strong data-i18n="controllerTitle">ريموت شاشة العربية</strong><span id="controller-connection" role="status"></span></div>
+   <h2 id="controller-title"></h2><p id="controller-phase" role="status"></p><span id="controller-time"></span>
+   <input id="controller-seek" type="range" min="0" max="100" value="0" aria-label="Seek on car" hidden>
+   <div class="controller-buttons"><button id="controller-previous" aria-label="Previous">⏮</button><button id="controller-play" aria-label="Play or pause">▶</button><button id="controller-next" aria-label="Next">⏭</button><button id="controller-stop" data-i18n="stop">إيقاف</button><button id="controller-retry" data-i18n="retry">إعادة المحاولة</button><button id="controller-full" data-i18n="carFullscreen">ملء شاشة العربية</button></div>
+  </section>
   <section id="welcome" class="welcome">
    <span class="eyebrow">MAGDI IPTV • WEB PLAYER</span><h1 data-i18n="welcome">شاشتك. قنواتك. اختيارك.</h1><p data-i18n="intro">شاهد القنوات العامة المجانية، أو أضف اشتراكك للقنوات والأفلام والمسلسلات.</p>
    <div class="welcome-actions"><button id="connect" class="primary" data-i18n="connect">اتصال بالاشتراك</button><button id="configure" data-i18n="configure">إضافة / تعديل الحساب</button><button id="public-open" data-i18n="publicChannels">قنوات عامة مجانية</button></div><p id="welcome-state" class="subtle"></p>
@@ -38,7 +44,8 @@
   <div id="notice" class="notice" role="status" hidden></div>
  </main>
  <div id="selection-feedback" class="selection-feedback" role="status" aria-live="polite" hidden><span class="feedback-indicator" aria-hidden="true"></span><div class="feedback-copy"><strong id="selection-title"></strong><span id="selection-state"></span></div><button id="show-player" data-i18n="showPlayer">عرض المشغّل</button></div>
- <footer><span>Magdi IPTV <b>0.1.8</b></span><span data-i18n="footer">مشغّل شخصي • مصادر عامة اختيارية</span></footer>
+ <footer><span>Magdi IPTV <b>0.1.9</b></span><span data-i18n="footer">مشغّل شخصي • مصادر عامة اختيارية</span></footer>
+ <dialog id="controller-alert"><div class="dialog-header"><h2 data-i18n="controllerTitle">ريموت شاشة العربية</h2><button id="controller-close-alert" aria-label="Close">✕</button></div><p id="controller-alert-text"></p></dialog>
  <dialog id="settings-dialog"><div class="dialog-header"><h2 data-i18n="account">الحساب والإعدادات</h2><button class="quiet" id="close-settings" aria-label="Close">✕</button></div>
   <form id="account-form"><label><span data-i18n="source">نوع المصدر</span><select id="source-mode"><option value="xtream">Xtream Codes</option><option value="m3u">M3U URL</option></select></label>
    <div id="xtream-fields"><label><span data-i18n="server">عنوان السيرفر (يشمل البورت إن لزم)</span><input id="host" type="url" dir="ltr" placeholder="http://example.com:80" autocomplete="off"></label><label><span data-i18n="username">اسم المستخدم</span><input id="username" dir="ltr" autocomplete="off"></label><label><span data-i18n="password">كلمة السر</span><input id="password" type="password" dir="ltr" autocomplete="new-password"></label><small data-i18n="passwordHint">اتركها فارغة للاحتفاظ بكلمة السر المحفوظة لنفس الحساب.</small></div>
@@ -65,5 +72,5 @@
   <div class="keyboard-tools"><button type="button" id="keys-language">عربي</button><button type="button" id="keys-caps" aria-label="Uppercase" aria-pressed="false">abc</button><button type="button" id="keys-symbols" aria-label="Symbols" aria-pressed="false">#+=</button><button type="button" id="keys-space">مسافة</button></div>
   <div class="keyboard-edit" dir="ltr"><button type="button" data-keyboard-char=".">.</button><button type="button" data-keyboard-char="/">/</button><button type="button" data-keyboard-char=":">:</button><button type="button" id="keys-left" aria-label="Move cursor left">←</button><button type="button" id="keys-right" aria-label="Move cursor right">→</button><button type="button" id="keys-delete" aria-label="Backspace">⌫</button><button type="button" id="keys-clear">مسح الكل</button></div>
  </dialog>
- <script src="vendor/hls.min.js"></script><script src="vendor/mpegts.js"></script><script src="playback_state.js"></script><script src="i18n.js"></script><script src="embedded_selects.js"></script><script src="embedded_keyboard.js"></script><script src="app.js"></script>
+ <script src="vendor/hls.min.js"></script><script src="vendor/mpegts.js"></script><script src="playback_state.js"></script><script src="i18n.js"></script><script src="embedded_selects.js"></script><script src="embedded_keyboard.js"></script><script src="controller.js"></script><script src="app.js"></script>
 </body></html>

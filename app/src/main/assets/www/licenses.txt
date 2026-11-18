@@ -1,4 +1,4 @@
-Magdi IPTV 0.1.8
+Magdi IPTV 0.1.9
 
 IPTVnator embedded Java backend
 Source: https://github.com/4gray/iptvnator/tree/master/tv-shell/android/backend
