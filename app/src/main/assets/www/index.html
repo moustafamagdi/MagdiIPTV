@@ -44,7 +44,7 @@
   <div id="notice" class="notice" role="status" hidden></div>
  </main>
  <div id="selection-feedback" class="selection-feedback" role="status" aria-live="polite" hidden><span class="feedback-indicator" aria-hidden="true"></span><div class="feedback-copy"><strong id="selection-title"></strong><span id="selection-state"></span></div><button id="show-player" data-i18n="showPlayer">عرض المشغّل</button></div>
- <footer><span>Magdi IPTV <b>0.1.10</b></span><span data-i18n="footer">مشغّل شخصي • مصادر عامة اختيارية</span></footer>
+ <footer><span>Magdi IPTV <b>0.1.11</b></span><span data-i18n="footer">مشغّل شخصي • مصادر عامة اختيارية</span></footer>
  <dialog id="controller-alert"><div class="dialog-header"><h2 data-i18n="controllerTitle">ريموت شاشة العربية</h2><button id="controller-close-alert" aria-label="Close">✕</button></div><p id="controller-alert-text"></p></dialog>
  <dialog id="settings-dialog"><div class="dialog-header"><h2 data-i18n="account">الحساب والإعدادات</h2><button class="quiet" id="close-settings" aria-label="Close">✕</button></div>
   <form id="account-form"><label><span data-i18n="source">نوع المصدر</span><select id="source-mode"><option value="xtream">Xtream Codes</option><option value="m3u">M3U URL</option></select></label>
@@ -64,7 +64,8 @@
   <p id="public-status" role="status" aria-live="polite"></p>
   <button id="public-load" class="primary" data-i18n="publicLoad">فتح القنوات</button>
  </dialog>
- <dialog id="episodes-dialog"><div class="dialog-header"><h2 id="series-title"></h2><button id="close-episodes" class="quiet">✕</button></div><select id="season" aria-label="Season"></select><div id="episodes" class="cards"></div></dialog>
+ <dialog id="details-dialog" aria-labelledby="details-title"><div class="dialog-header"><h2 id="details-title"></h2><button id="details-close" class="quiet" aria-label="Close">✕</button></div><div id="details-summary" class="metadata-summary"></div><p id="details-status" role="status"></p><button id="details-play" class="primary" data-i18n="playOnCar">تشغيل على شاشة العربية</button></dialog>
+ <dialog id="episodes-dialog"><div class="dialog-header"><h2 id="series-title"></h2><button id="close-episodes" class="quiet">✕</button></div><div id="series-summary" class="metadata-summary"></div><select id="season" aria-label="Season"></select><div id="episodes" class="cards"></div></dialog>
  <dialog id="keyboard-dialog" aria-labelledby="keyboard-label">
   <div id="keyboard-label" class="keyboard-label"></div>
   <div class="dialog-header"><input id="keyboard-input" aria-labelledby="keyboard-label" autocomplete="off" autocapitalize="off" spellcheck="false" readonly inputmode="none"><button type="button" id="keyboard-reveal" hidden>إظهار</button><button type="button" id="keyboard-done" class="primary">تم</button><button type="button" id="keyboard-close" class="quiet" aria-label="Cancel">✕</button></div>
@@ -72,5 +73,5 @@
   <div class="keyboard-tools"><button type="button" id="keys-language">عربي</button><button type="button" id="keys-caps" aria-label="Uppercase" aria-pressed="false">abc</button><button type="button" id="keys-symbols" aria-label="Symbols" aria-pressed="false">#+=</button><button type="button" id="keys-space">مسافة</button></div>
   <div class="keyboard-edit" dir="ltr"><button type="button" data-keyboard-char=".">.</button><button type="button" data-keyboard-char="/">/</button><button type="button" data-keyboard-char=":">:</button><button type="button" id="keys-left" aria-label="Move cursor left">←</button><button type="button" id="keys-right" aria-label="Move cursor right">→</button><button type="button" id="keys-delete" aria-label="Backspace">⌫</button><button type="button" id="keys-clear">مسح الكل</button></div>
  </dialog>
- <script src="vendor/hls.min.js"></script><script src="vendor/mpegts.js"></script><script src="playback_state.js"></script><script src="i18n.js"></script><script src="embedded_selects.js"></script><script src="embedded_keyboard.js"></script><script src="controller.js"></script><script src="app.js"></script>
+ <script src="vendor/hls.min.js"></script><script src="vendor/mpegts.js"></script><script src="playback_state.js"></script><script src="i18n.js"></script><script src="embedded_selects.js"></script><script src="embedded_keyboard.js"></script><script src="controller.js"></script><script src="metadata.js"></script><script src="app.js"></script>
 </body></html>

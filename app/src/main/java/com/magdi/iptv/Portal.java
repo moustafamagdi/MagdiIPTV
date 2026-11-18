@@ -22,7 +22,7 @@ final class Portal {
  private Object xtream(JSONObject a,String action,JSONObject args) throws Exception {
   Map<String,List<String>> query=new LinkedHashMap<>();query.put("targetId",Collections.singletonList(target(validHost(a.getString("host")))));query.put("username",Collections.singletonList(a.getString("username")));query.put("password",Collections.singletonList(a.getString("password")));
   if(!action.isEmpty())query.put("action",Collections.singletonList(action));
-  for(String k:new String[]{"category_id","series_id","stream_id","limit"})if(args.has(k))query.put(k,Collections.singletonList(args.getString(k)));
+  for(String k:new String[]{"category_id","vod_id","series_id","stream_id","limit"})if(args.has(k))query.put(k,Collections.singletonList(args.getString(k)));
   JSONObject result=new JSONObject(backend.handle("GET","/xtream",query,null).bodyText());
   if(result.has("error"))throw new java.io.IOException("Provider request failed");
   Object payload=result.opt("payload");if(!(payload instanceof JSONObject)&&!(payload instanceof JSONArray))throw new java.io.IOException("Provider returned a web page instead of IPTV data. Check the address or network.");
@@ -56,6 +56,12 @@ final class Portal {
     if(!Arrays.asList("live","vod","series").contains(type))throw new IllegalArgumentException("Invalid catalog");
     action="get_"+type+(args.optBoolean("categories")?"_categories":type.equals("series")?"":"_streams");
     return xtream(a,action,args);
+   }
+   case "details": {
+    String id=args.getString("vod_id");if(!id.matches("[0-9]+"))throw new IllegalArgumentException("Invalid movie selection");
+    JSONObject payload=(JSONObject)xtream(a,"get_vod_info",args),info=payload.optJSONObject("info"),safe=new JSONObject();
+    if(info!=null)for(String field:new String[]{"movie_image","cover","plot","description","rating","releasedate","releaseDate","year","genre","cast","director","duration"})if(info.has(field))safe.put(field,info.get(field));
+    return safe;
    }
    case "episodes":return xtream(a,"get_series_info",args);
    case "epg":return xtream(a,"get_short_epg",args);

@@ -19,6 +19,7 @@ public final class PlayerView extends FrameLayout {
  private final java.util.concurrent.ExecutorService requests=java.util.concurrent.Executors.newFixedThreadPool(3);
  private final java.util.concurrent.ExecutorService controls=java.util.concurrent.Executors.newSingleThreadExecutor();
  private final StreamProxy proxy=new StreamProxy();
+ private final ArtworkProxy artwork=new ArtworkProxy();
  private final Portal portal;
  private static final Set<PlayerView> views=Collections.newSetFromMap(new WeakHashMap<>());
  private final Runnable repaint=()->refreshPicture();
@@ -50,6 +51,7 @@ public final class PlayerView extends FrameLayout {
     android.net.Uri u=r.getUrl();
     if(!"https".equals(u.getScheme())||!"app.magdi.local".equals(u.getHost()))return StreamProxy.reply(403,"text/plain","External navigation disabled");
     String path=u.getPath();if(path==null)return StreamProxy.reply(404,"text/plain","");
+    if(path.startsWith("/artwork/")&&"GET".equals(r.getMethod()))return artwork.open(path.substring(9));
     if(path.startsWith("/media/"))return phone?StreamProxy.reply(403,"text/plain","Phone is a controller only"):proxy.open(path.substring(7),r.getRequestHeaders());
     if(path.contains("..")||path.contains("%")||!"GET".equals(r.getMethod()))return StreamProxy.reply(403,"text/plain","");
     if(path.equals("/"))path="/index.html";
@@ -84,12 +86,13 @@ public final class PlayerView extends FrameLayout {
      }catch(Exception e){try{reply(id,new JSONObject().put("ok",false).put("error","Car player unavailable"));}catch(JSONException ignored){}}
     });return;
    }
-   java.util.concurrent.ExecutorService worker=Arrays.asList("connect","catalog","episodes","epg","playlist","publicplaylist").contains(method)?requests:controls;
+   java.util.concurrent.ExecutorService worker=Arrays.asList("connect","catalog","details","episodes","epg","playlist","publicplaylist").contains(method)?requests:controls;
    worker.execute(()->{
     JSONObject answer=new JSONObject();
     try{
      JSONObject args=new JSONObject(payload);Object value;
-     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.10").put("background",background);
+     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.11").put("background",background);
+     else if("artwork".equals(method))value=artwork.register(args.getString("url"));
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)||"logSessions".equals(method)){boolean ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone)Diagnostics.open((android.app.Activity)getContext(),ar);});value=true;}
      else if("setup".equals(method)){String language=args.optString("language","ar");timer.post(()->{if(phone)getContext().startActivity(new Intent(getContext(),InstallSetupActivity.class).putExtra("language",language));});value=true;}
@@ -151,5 +154,5 @@ public final class PlayerView extends FrameLayout {
  private void hideFullscreen(){if(fullscreen==null)return;FrameLayout old=fullscreen;fullscreen=null;removeView(old);old.removeAllViews();web.setVisibility(VISIBLE);WebChromeClient.CustomViewCallback cb=fullscreenCallback;fullscreenCallback=null;if(cb!=null)cb.onCustomViewHidden();schedulePicture();}
  boolean handleBack(){if(fullscreen!=null){hideFullscreen();return true;}long now=android.os.SystemClock.elapsedRealtime();if(now-lastBack<1500)return false;lastBack=now;web.evaluateJavascript("window.app&&window.app.back()",null);return true;}
  void prepareDetach(){pause();hideFullscreen();}
- void close(){if(closed)return;if(!phone)CarController.detach(this);closed=true;active=false;timer.removeCallbacksAndMessages(null);requests.shutdownNow();controls.shutdownNow();views.remove(this);MediaCardService.forget(this);PlaybackService.release(this);hideFullscreen();proxy.clear();removeView(web);web.removeJavascriptInterface("Android");web.destroy();Diagnostics.event(surface+" destroyed");}
+ void close(){if(closed)return;if(!phone)CarController.detach(this);closed=true;active=false;timer.removeCallbacksAndMessages(null);requests.shutdownNow();controls.shutdownNow();views.remove(this);MediaCardService.forget(this);PlaybackService.release(this);hideFullscreen();proxy.clear();artwork.clear();removeView(web);web.removeJavascriptInterface("Android");web.destroy();Diagnostics.event(surface+" destroyed");}
 }

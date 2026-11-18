@@ -19,6 +19,14 @@ Keep Magdi IPTV open on the car screen. The phone shows whether the car player i
 
 Without an available car player, selecting content displays a connection notice. Selections are not queued for later. Disconnecting or closing/leaving the car player stops playback and cancels pending selections; reconnecting does not resume automatically. Closing the phone interface does not stop an available car player. Phone browsing can use a different library while the controller continues to show what is playing on the car.
 
+## Posters, channel logos and descriptions
+
+Xtream libraries display provider-supplied channel logos and movie/series posters. Personal and public M3U lists also display `tvg-logo` artwork. Images load as they approach the visible area, are resized and temporarily cached in memory, and keep a placeholder if absent, unsupported or unavailable. Supported artwork is HTTP/HTTPS raster imagery (such as PNG, JPEG and WebP); the app does not search third-party databases for missing images.
+
+Tap a movie card to see its poster, description and any supplied year, rating, genre, duration, director or cast. **Play on car screen** sends the selection through the existing phone controller. Opening details alone never starts playback. Series descriptions appear above the season/episode list; **ⓘ** beside an episode opens its supplied image and description. Live channels still play with one selection. Missing or failed metadata does not prevent trying playback.
+
+Artwork has a separate image-only native path with bounded downloads and caching; the phone's video/audio restrictions remain in force. Provider descriptions are displayed as text, not executable HTML. Artwork addresses and content metadata are not added to diagnostic logs.
+
 ## Free public channels
 
 Choose **Free public channels** on the welcome screen or above the library, select a list, then **Open channels**:

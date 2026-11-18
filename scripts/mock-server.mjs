@@ -10,6 +10,8 @@ const web=path.resolve(process.argv[2]||'app/src/main/assets/www');
 const server=http.createServer(async(req,res)=>{
  const u=new URL(req.url,'http://localhost');
  const json=value=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(value));};
+ if(u.pathname==='/fixture-poster.png'){res.setHeader('Content-Type','image/png');fs.createReadStream(path.resolve('tests/media/fixture-poster.png')).pipe(res);return;}
+ if(u.pathname==='/fixture-broken.png'){res.writeHead(404);res.end();return;}
  if(u.pathname==='/test/slow-epg'){slowEpg=u.searchParams.get('enabled')==='1';return json({slowEpg});}
  if(u.pathname==='/test/public'){publicOptions={delay:Number(u.searchParams.get('delay')||0),error:u.searchParams.has('error'),empty:u.searchParams.has('empty')};return json({publicLoads});}
  if(u.pathname==='/test/reset-account'){saved=u.searchParams.has('empty')?{}:{host:'http://127.0.0.1:8787',username:'demo',password:'demo',mode:'xtream'};return json({ok:true});}
@@ -20,15 +22,16 @@ const server=http.createServer(async(req,res)=>{
    else if(method==='config')value={...saved,configured:!!saved.host,hasPassword:!!saved.password,password:undefined};
    else if(method==='publicplaylist'){
     publicLoads++;const options={...publicOptions};if(options.delay)await new Promise(r=>setTimeout(r,options.delay));if(options.error)throw Error('Fixture offline');
-    value={playlist:{items:options.empty?[]:[{name:args.preset+' News',url:'http://127.0.0.1:8787/1.m3u8',group:{title:'News'}},{name:args.preset+' Nature',url:'http://127.0.0.1:8787/2.m3u8',group:{title:'Nature'}}]}};
+    value={playlist:{items:options.empty?[]:[{name:args.preset+' News',url:'http://127.0.0.1:8787/1.m3u8',tvg:{logo:'http://127.0.0.1:8787/fixture-poster.png'},group:{title:'News'}},{name:args.preset+' Nature',url:'http://127.0.0.1:8787/2.m3u8',group:{title:'Nature'}}]}};
    }
    else if(method==='publicplay')value=args.url;
    else if(method==='forget'){saved={};value=true;}
    else if(method==='save'){saved=args;value=true;}
    else if(method==='connect')value={mode:'xtream',source:'fixture',status:'Active'};
-   else if(method==='catalog'||method==='episodes'||method==='epg'){
-    const action=method==='episodes'?'get_series_info':method==='epg'?'get_short_epg':'get_'+args.type+(args.categories?'_categories':args.type==='series'?'':'_streams');
-    value=await(await fetch('http://127.0.0.1:8787/player_api.php?'+new URLSearchParams({username:'demo',password:'demo',action,...args}))).json();
+   else if(method==='artwork')value=args.url;
+   else if(method==='catalog'||method==='details'||method==='episodes'||method==='epg'){
+    const action=method==='details'?'get_vod_info':method==='episodes'?'get_series_info':method==='epg'?'get_short_epg':'get_'+args.type+(args.categories?'_categories':args.type==='series'?'':'_streams');
+    value=await(await fetch('http://127.0.0.1:8787/player_api.php?'+new URLSearchParams({username:'demo',password:'demo',action,...args}))).json();if(method==='details')value=value.info||{};
    }else if(method==='play')value='http://127.0.0.1:8787/'+args.id+'.'+args.ext;
    else value=true;
    return json({ok:true,value});
@@ -42,14 +45,15 @@ const server=http.createServer(async(req,res)=>{
   const a=u.searchParams.get('action');
   if(!a)return json({user_info:{auth:1,status:'Active',allowed_output_formats:['m3u8','ts'],exp_date:'1999999999'}});
   if(a.endsWith('_categories'))return json([{category_id:'1',category_name:'Featured / مختارات'},{category_id:'2',category_name:'Arabic / عربي'}]);
-  if(a==='get_live_streams'){const cat=u.searchParams.get('category_id');return json(names.map(channel).filter(c=>!cat||c.category_id===cat));}
-  if(a==='get_vod_streams')return json([{name:'Color & Motion',stream_id:101,category_id:'1',container_extension:'mp4',year:'2026',rating:'8.5'}]);
-  if(a==='get_series')return json([{name:'The Color Study',series_id:201,category_id:'1',year:'2026',rating:'8.0'}]);
-  if(a==='get_series_info')return json({episodes:{'1':[{id:'301',episode_num:1,title:'Episode 1 · Motion',container_extension:'mp4'},{id:'302',episode_num:2,title:'Episode 2 · Sound',container_extension:'mp4'}]}});
+  if(a==='get_live_streams'){const cat=u.searchParams.get('category_id');return json(names.map((name,i)=>({...channel(name,i),stream_icon:i===1?'http://'+req.headers.host+'/fixture-broken.png':i===2?'':'http://'+req.headers.host+'/fixture-poster.png'})).filter(c=>!cat||c.category_id===cat));}
+  if(a==='get_vod_info')return json({info:{movie_image:'http://'+req.headers.host+'/fixture-poster.png',plot:'A journey through colour. رحلة عربية لاختبار الوصف.',genre:'Documentary',director:'Fixture Director',cast:'Test Cast',duration:'00:10',rating:'8.5'},movie_data:{stream_id:101,direct_source:'must-not-be-shown'}});
+  if(a==='get_vod_streams')return json([{name:'Color & Motion',stream_icon:'http://'+req.headers.host+'/fixture-poster.png',stream_id:101,category_id:'1',container_extension:'mp4',year:'2026',rating:'8.5'}]);
+  if(a==='get_series')return json([{name:'The Color Study',cover:'http://'+req.headers.host+'/fixture-poster.png',plot:'A series about colour / مسلسل عن الألوان',series_id:201,category_id:'1',year:'2026',rating:'8.0'}]);
+  if(a==='get_series_info')return json({info:{cover:'http://'+req.headers.host+'/fixture-poster.png',plot:'Full series description / وصف المسلسل الكامل'},episodes:{'1':[{id:'301',episode_num:1,title:'Episode 1 · Motion',info:{movie_image:'http://'+req.headers.host+'/fixture-poster.png',plot:'Episode description / وصف الحلقة'},container_extension:'mp4'},{id:'302',episode_num:2,title:'Episode 2 · Sound',container_extension:'mp4'}]}});
   if(a==='get_short_epg'){if(slowEpg)await new Promise(r=>setTimeout(r,6000));return json({epg_listings:[{title:Buffer.from('Now: Color and sound test').toString('base64')}]});}
   return json([]);
  }
- if(u.pathname==='/playlist.m3u'){res.setHeader('Content-Type','audio/x-mpegurl');res.end('#EXTM3U\n#EXTINF:-1 group-title="Test",Test HLS\nhttp://10.0.2.2:8787/live/demo/demo/1.m3u8\n');return;}
+ if(u.pathname==='/playlist.m3u'){res.setHeader('Content-Type','audio/x-mpegurl');res.end('#EXTM3U\n#EXTINF:-1 tvg-logo="http://10.0.2.2:8787/fixture-poster.png" group-title="Test",Test HLS\nhttp://10.0.2.2:8787/live/demo/demo/1.m3u8\n');return;}
  let filename;
  if(u.pathname.endsWith('.m3u8'))filename='index.m3u8';
  else if(/segment\d+\.ts$/.test(u.pathname))filename=path.basename(u.pathname);

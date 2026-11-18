@@ -1,0 +1,25 @@
+'use strict';
+// Provider metadata is text, never HTML. Artwork uses a separate raster-only native route.
+window.Metadata=(()=>{
+ const registrations=new Map(),observed=new Set(),detailsCache=new Map();let generation=0;
+ const text=(...values)=>{for(const value of values)if((typeof value==='string'||typeof value==='number')&&String(value).trim()&&!['null','undefined','N/A'].includes(String(value)))return String(value).replace(/<[^>]*>/g,'').replace(/&amp;/g,'&').replace(/&nbsp;/g,' ').trim().slice(0,6000);return '';};
+ function imageUrl(...values){for(const value of values){if(typeof value!=='string'||value.length>8192)continue;try{const url=new URL(value.startsWith('//')?'https:'+value:value);if(['http:','https:'].includes(url.protocol)&&!url.username&&!url.password)return url.href;}catch{}}return '';}
+ function fields(raw={}){return {artwork:imageUrl(raw.artwork,raw.stream_icon,raw.cover,raw.movie_image,raw.logo,raw.tvg?.logo),description:text(raw.description,raw.plot,raw.overview),year:text(raw.year,raw.releaseDate,raw.releasedate,raw.release_date),rating:text(raw.rating),genre:text(raw.genre),cast:text(raw.cast,raw.actors),director:text(raw.director),duration:text(raw.duration)};}
+ function merge(item,raw){const extra=fields(raw);return {...item,...Object.fromEntries(Object.entries(extra).filter(([,value])=>value))};}
+ async function load(tile,url){observed.delete(tile);observer?.unobserve(tile);try{let request=registrations.get(url);if(!request){request=api('artwork',{url});registrations.set(url,request);if(registrations.size>512)registrations.delete(registrations.keys().next().value);}const local=await request;if(!tile.isConnected)return;
+   // Production only accepts opaque native artwork URLs; fixture URLs are allowed off the app origin.
+   if(location.hostname==='app.magdi.local'&&!/^https:\/\/app\.magdi\.local\/artwork\/[a-f0-9-]+$/.test(local))return;
+   const img=document.createElement('img');img.alt='';img.decoding='async';img.referrerPolicy='no-referrer';img.onload=()=>tile.classList.add('has-artwork');img.onerror=()=>{img.remove();tile.classList.remove('has-artwork');};img.src=local;tile.append(img);
+  }catch{registrations.delete(url);}}
+ const observer='IntersectionObserver' in window?new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting)load(entry.target,entry.target.dataset.artwork);},{rootMargin:'160px'}):null;
+ function tile(item){const el=document.createElement('span');el.className='tile artwork '+(item.type==='live'?'channel-logo':item.type==='episode'?'episode-art':'poster-art');el.setAttribute('aria-hidden','true');const fallback=document.createElement('span');fallback.className='artwork-fallback';fallback.textContent=item.type==='live'?String(item.name||'TV').slice(0,2):item.type==='series'?'▤':'▶';el.append(fallback);const url=imageUrl(item.artwork);if(url){el.dataset.artwork=url;if(observer){observed.add(el);observer.observe(el);}else setTimeout(()=>load(el,url),0);}return el;}
+ function prune(){for(const el of observed)if(!el.isConnected){observer.unobserve(el);observed.delete(el);}}
+ function summary(container,item){container.replaceChildren();const copy=document.createElement('div');copy.className='metadata-copy';const meta=document.createElement('p');meta.className='subtle';meta.textContent=[item.year,item.rating?'★ '+item.rating:'',item.genre,item.duration].filter(Boolean).join(' · ');const plot=document.createElement('p');plot.className='metadata-description';plot.textContent=item.description||t('noDescription');copy.append(meta,plot);for(const [field,label] of [['director','director'],['cast','cast']])if(item[field]){const p=document.createElement('p');p.className='metadata-credit';p.textContent=t(label)+': '+item[field];copy.append(p);}container.append(tile(item),copy);prune();}
+ async function open(item){const request=++generation,origin=source;let selected={...item};const dialog=$('details-dialog');$('details-title').textContent=item.name;summary($('details-summary'),selected);$('details-status').textContent='';$('details-play').textContent=t(Controller.isPhone()?'playOnCar':'playControl');$('details-play').onclick=()=>{dialog.close();selectItem(selected);};if(!dialog.open)dialog.showModal();
+  if(item.type!=='vod'||mode!=='xtream')return;const cacheKey=origin+':'+item.id;$('details-status').textContent=t('loadingDetails');
+  try{let data=detailsCache.get(cacheKey);if(!data){data=await api('details',{vod_id:item.id});if(detailsCache.size>=48)detailsCache.delete(detailsCache.keys().next().value);detailsCache.set(cacheKey,data);}if(request!==generation||origin!==source||!dialog.open)return;selected=merge(item,data);summary($('details-summary'),selected);$('details-status').textContent='';}
+  catch{if(request===generation&&origin===source&&dialog.open)$('details-status').textContent=t('detailsUnavailable');}
+ }
+ function init(){$('details-close').onclick=()=>$('details-dialog').close();$('details-dialog').addEventListener('close',()=>{generation++;prune();});}
+ return {fields,merge,tile,prune,summary,open,init};
+})();
