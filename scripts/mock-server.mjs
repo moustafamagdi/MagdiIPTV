@@ -58,7 +58,7 @@ const server=http.createServer(async(req,res)=>{
  if(u.pathname.endsWith('.m3u8'))filename='index.m3u8';
  else if(/segment\d+\.ts$/.test(u.pathname))filename=path.basename(u.pathname);
  else if(u.pathname.endsWith('.ts'))filename='test.ts';
- else if(u.pathname.endsWith('.mp4'))filename='test.mp4';
+ else if(u.pathname.endsWith('.mp4'))filename=process.env.CONTROLLER_MEDIA==='1'?'controller.mp4':'test.mp4';
  if(filename){
   const file=path.join(media,filename);if(!fs.existsSync(file)){res.writeHead(404);res.end();return;}
   const size=fs.statSync(file).size;res.setHeader('Content-Type',filename.endsWith('m3u8')?'application/vnd.apple.mpegurl':filename.endsWith('ts')?'video/mp2t':'video/mp4');res.setHeader('Accept-Ranges','bytes');

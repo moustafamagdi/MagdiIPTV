@@ -15,6 +15,9 @@ public final class PlayerView extends FrameLayout {
  private final String surface;
  private boolean closed,active,background=true,pendingResume,interrupted,documentReady;
  private long lastTelemetry,lastBack,detachedSince;
+ private boolean sampleInFlight;
+ private long sampleGeneration,sampleStarted;
+ private String observationReason="";
  private final android.os.Handler timer=new android.os.Handler(android.os.Looper.getMainLooper());
  private final java.util.concurrent.ExecutorService requests=java.util.concurrent.Executors.newFixedThreadPool(3);
  private final java.util.concurrent.ExecutorService controls=java.util.concurrent.Executors.newSingleThreadExecutor();
@@ -63,6 +66,7 @@ public final class PlayerView extends FrameLayout {
      return new WebResourceResponse(mime,"UTF-8",200,"OK",headers,in);
     }catch(java.io.IOException e){return StreamProxy.reply(404,"text/plain","Not found");}
    }
+   public void onPageStarted(WebView v,String u,android.graphics.Bitmap icon){documentReady=false;controllerChanged();if(!phone)CarController.documentLoading(PlayerView.this);}
    public void onPageFinished(WebView v,String u){Diagnostics.event(surface+" page ready");}
   });
   web.loadUrl(StreamProxy.ORIGIN+"/");Diagnostics.event(surface+" view created");
@@ -70,16 +74,18 @@ public final class PlayerView extends FrameLayout {
  private final class Bridge {
   @JavascriptInterface public void request(String id,String method,String payload){
    if(closed||id==null||!id.matches("[0-9]{1,12}"))return;
-   if(Arrays.asList("controllerstate","controllercommand","ready","play","publicplay").contains(method)){
+   if(Arrays.asList("controllerstate","controllercommand","ready","playerbegin","carstop","play","publicplay").contains(method)){
     timer.post(()->{
      if(closed)return;
      try{
       JSONObject args=new JSONObject(payload);Object value;
       if("ready".equals(method)){documentReady=true;if(!phone)CarController.pageReady(PlayerView.this);value=true;}
+      else if("playerbegin".equals(method)){if(phone)throw new IllegalStateException();value=CarController.begin(PlayerView.this,args);}
+      else if("carstop".equals(method)){if(phone||!CarController.accepts(PlayerView.this))throw new IllegalStateException();value=CarController.command(args.put("action","stop"));}
       else if("controllerstate".equals(method))value=CarController.status();
       else if("controllercommand".equals(method))value=phone&&CarController.command(args);
       else {
-       if(phone||!CarController.accepts(PlayerView.this))throw new IllegalStateException("Car player unavailable");
+       if(phone||!CarController.accepts(PlayerView.this,args.optLong("epoch",-1),args.optLong("request",-1)))throw new IllegalStateException("Car player unavailable");
        value=portal.call(method,args);MediaCardService.select(PlayerView.this);
       }
       reply(id,new JSONObject().put("ok",true).put("value",value));
@@ -91,7 +97,7 @@ public final class PlayerView extends FrameLayout {
     JSONObject answer=new JSONObject();
     try{
      JSONObject args=new JSONObject(payload);Object value;
-     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.11").put("background",background);
+     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.12").put("background",background);
      else if("artwork".equals(method))value=artwork.register(args.getString("url"));
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)||"logSessions".equals(method)){boolean ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone)Diagnostics.open((android.app.Activity)getContext(),ar);});value=true;}
@@ -107,12 +113,12 @@ public final class PlayerView extends FrameLayout {
    if(kind==null||!kind.matches("play|pause|waiting|playing|error|ended|telemetry|fullscreen"))return;
    timer.post(()->{if(closed)return;try{JSONObject s=new JSONObject(state);long now=android.os.SystemClock.elapsedRealtime();if("telemetry".equals(kind)&&now-lastTelemetry<10000)return;lastTelemetry=now;Diagnostics.event(surface+" media="+kind+" time="+s.optInt("time")+" ready="+s.optInt("ready")+" frames="+s.optLong("frames")+" engine="+(s.optString("engine").matches("hls|ts|native")?s.optString("engine"):"unknown")+" code="+s.optInt("code"));}catch(Exception ignored){}});
   }
-  @JavascriptInterface public void carState(String state){if(phone||state==null||state.length()>20000)return;timer.post(()->{if(!closed)try{CarController.report(PlayerView.this,new JSONObject(state));}catch(JSONException ignored){}});}
+  @JavascriptInterface public void carState(String state){if(phone||state==null||state.length()>20000)return;timer.post(()->{if(!closed)try{observe(new JSONObject(state));}catch(JSONException ignored){}});}
  }
  private void reply(String id,JSONObject value){if(!closed)web.evaluateJavascript("window.nativeReply("+id+","+value+")",null);}
  boolean documentReady(){return documentReady;}
- void carConnection(long epoch){if(closed)return;pendingResume=false;if(epoch==0){web.evaluateJavascript("window.Controller&&Controller.connection(0)",null);web.evaluateJavascript("if(window.__magdiPlayback)window.__magdiPlayback.stop();document.querySelectorAll('video,audio').forEach(v=>{v.pause();v.removeAttribute('src');v.load()})",null);proxy.clear();}else web.evaluateJavascript("window.Controller&&Controller.connection("+epoch+")",null);}
- void accountChanged(){if(!closed)web.evaluateJavascript("window.Controller&&Controller.accountChanged()",null);}
+ void carConnection(long epoch,long request){controllerChanged();if(closed)return;pendingResume=false;if(epoch==0){web.evaluateJavascript("window.Controller&&Controller.connection(0,"+request+")",null);web.evaluateJavascript("if(window.__magdiPlayback)window.__magdiPlayback.stop();document.querySelectorAll('video,audio').forEach(v=>{v.pause();v.removeAttribute('src');v.load()})",null);proxy.clear();}else web.evaluateJavascript("window.Controller&&Controller.connection("+epoch+","+request+")",null);}
+ void accountChanged(long request){controllerChanged();if(!closed)web.evaluateJavascript("window.Controller&&Controller.accountChanged("+request+")",null);}
  void controllerCommand(JSONObject command){if(!closed)web.evaluateJavascript("window.Controller&&Controller.receive("+command+")",null);}
  private static String safeError(Exception e){
   if(e instanceof IllegalArgumentException)return "Check the server address and required fields.";
@@ -120,27 +126,36 @@ public final class PlayerView extends FrameLayout {
   if(e instanceof java.io.IOException){String m=e.getMessage();if(m!=null&&(m.startsWith("Provider returned")||m.startsWith("Login rejected")||m.startsWith("Subscription")))return m;return "Cannot reach the IPTV server. Check your network or try again.";}
   return "Request could not be completed. Check your settings and retry.";
  }
+ void controllerChanged(){sampleGeneration++;sampleInFlight=false;pendingResume=false;}
+ private boolean acceptSample(long generation,long epoch,long request){if(closed||generation!=sampleGeneration)return false;sampleInFlight=false;return CarController.accepts(this,epoch,request);}
+ private void observation(String reason){if(reason.equals(observationReason))return;observationReason=reason;Diagnostics.event("Controller observation="+reason);}
+ private void observe(JSONObject state){
+  String reason=CarController.report(this,state);observation(reason);if(!"accepted".equals(reason))return;
+  boolean playing=state.optBoolean("playing");if(!state.optBoolean("wanted"))pendingResume=false;
+  MediaCardService.observe(this,playing,state.optBoolean("muted"),state.optInt("ready")>0&&!state.optBoolean("error"),state.optLong("time")*1000);
+  if(playing&&background)PlaybackService.keep(this);else if(!pendingResume&&!interrupted)PlaybackService.idle(this);
+ }
  private final Runnable sample=new Runnable(){public void run(){
   if(closed||phone||!active)return;
   android.media.AudioManager audio=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);
   boolean call=audio.getMode()!=android.media.AudioManager.MODE_NORMAL;
   if(call&&!interrupted){interrupted=true;cover();}else if(!call&&interrupted){interrupted=false;tryResume();}
-  web.evaluateJavascript("JSON.stringify(window.app?window.app.state():{})",value->{
-   if(closed||!CarController.accepts(PlayerView.this))return;
-   try{JSONObject s=new JSONObject(new JSONArray("["+value+"]").getString(0));boolean playing=s.optBoolean("playing");
-    if(!s.optBoolean("wanted"))pendingResume=false;
-    MediaCardService.observe(PlayerView.this,playing,s.optBoolean("muted"),s.optInt("ready")>0,s.optLong("time")*1000);
-    if(playing&&background)PlaybackService.keep(PlayerView.this);else if(!pendingResume&&!interrupted)PlaybackService.idle(PlayerView.this);
-    if(!active&&getParent()==null&&!playing&&!MediaCardService.retains(PlayerView.this)){if(detachedSince==0)detachedSince=android.os.SystemClock.elapsedRealtime();if(android.os.SystemClock.elapsedRealtime()-detachedSince>300000)CarPlaybackSession.stopDetached();}else detachedSince=0;
-   }catch(JSONException ignored){}
-  });timer.postDelayed(this,2000);
+  long now=android.os.SystemClock.elapsedRealtime();
+  if(sampleInFlight&&now-sampleStarted>=6000){controllerChanged();observation("sample-timeout");}
+  if(!sampleInFlight){sampleInFlight=true;sampleStarted=now;final long ticket=++sampleGeneration,e=CarController.epoch(),r=CarController.request();
+   web.evaluateJavascript("JSON.stringify(window.app?window.app.state():null)",value->{
+    if(!acceptSample(ticket,e,r))return;
+    try{observe(new JSONObject(new JSONArray("["+value+"]").getString(0)));}catch(JSONException ignored){observation("sample-unavailable");}
+   });
+  }timer.postDelayed(this,2000);
  }};
- void resume(){if(closed)return;background=getContext().getSharedPreferences("iptv",0).getBoolean("backgroundAudio",true);active=true;web.onResume();if(!phone){CarController.attach(this);timer.removeCallbacks(sample);timer.post(sample);}schedulePicture();timer.postDelayed(()->tryResume(),500);Diagnostics.event(surface+" resumed");}
- void pause(){if(closed)return;active=false;timer.removeCallbacks(repaint);timer.removeCallbacks(sample);if(!phone){CarController.detach(this);pendingResume=false;}web.onPause();Diagnostics.event(surface+" covered; controller="+phone);}
- private void cover(){if(phone||web==null||closed||!active||!background)return;pendingResume=true;web.evaluateJavascript("window.__magdiPlayback?window.__magdiPlayback.cover():false",v->{if(!closed&&active)pendingResume="true".equals(v);});}
- private void tryResume(){if(phone||closed||!CarController.accepts(this)||!background||!pendingResume)return;android.media.AudioManager a=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);if(a.getMode()!=android.media.AudioManager.MODE_NORMAL||a.isMusicActive())return;pendingResume=false;web.evaluateJavascript("window.__magdiPlayback&&window.__magdiPlayback.resume()",null);}
- void pauseMedia(){if(phone)return;pendingResume=false;web.evaluateJavascript("if(window.__magdiPlayback)window.__magdiPlayback.stop();if(window.app)window.app.pause()",null);MediaCardService.paused(this);PlaybackService.release(this);}
- void playFromMediaCard(){if(phone||closed||!CarController.accepts(this))return;android.media.AudioManager a=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);if(a.getMode()!=android.media.AudioManager.MODE_NORMAL)return;web.onResume();web.evaluateJavascript("window.app&&window.app.resume()",null);}
+ void resume(){if(closed)return;background=getContext().getSharedPreferences("iptv",0).getBoolean("backgroundAudio",true);active=true;controllerChanged();web.onResume();if(!phone){CarController.attach(this);timer.removeCallbacks(sample);timer.post(sample);}schedulePicture();timer.postDelayed(()->tryResume(),500);Diagnostics.event(surface+" resumed");}
+ void pause(){if(closed)return;active=false;controllerChanged();timer.removeCallbacks(repaint);timer.removeCallbacks(sample);if(!phone){CarController.detach(this);pendingResume=false;}web.onPause();Diagnostics.event(surface+" covered; controller="+phone);}
+ private void cover(){if(phone||web==null||closed||!active||!background)return;pendingResume=true;final long e=CarController.epoch(),r=CarController.request(),g=sampleGeneration;web.evaluateJavascript("window.__magdiPlayback?window.__magdiPlayback.cover():false",v->{if(!closed&&active&&g==sampleGeneration&&CarController.accepts(this,e,r))pendingResume="true".equals(v);});}
+ private void tryResume(){if(phone||closed||!CarController.accepts(this)||!background||!pendingResume)return;android.media.AudioManager a=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);if(a.getMode()!=android.media.AudioManager.MODE_NORMAL||a.isMusicActive())return;pendingResume=false;guardedPlayerScript("window.__magdiPlayback&&window.__magdiPlayback.resume()");}
+ private void guardedPlayerScript(String script){web.evaluateJavascript("if(window.Controller&&Controller.matches("+CarController.epoch()+","+CarController.request()+")){"+script+"}",null);}
+ void pauseMedia(){if(phone)return;pendingResume=false;guardedPlayerScript("if(window.__magdiPlayback)window.__magdiPlayback.stop();if(window.app)window.app.pause()");MediaCardService.paused(this);PlaybackService.release(this);}
+ void playFromMediaCard(){if(phone||closed||!CarController.accepts(this))return;android.media.AudioManager a=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);if(a.getMode()!=android.media.AudioManager.MODE_NORMAL)return;web.onResume();guardedPlayerScript("window.app&&window.app.resume()");}
  boolean isCarView(){return !phone;}
  private void schedulePicture(){if(!active||closed)return;timer.removeCallbacks(repaint);timer.post(repaint);timer.postDelayed(repaint,250);timer.postDelayed(repaint,900);}
  private void refreshPicture(){if(closed||!active||!isAttachedToWindow()||!isShown())return;web.onResume();web.requestLayout();web.postInvalidateOnAnimation();if(fullscreen!=null)fullscreen.postInvalidateOnAnimation();web.evaluateJavascript("window.dispatchEvent(new Event('resize'))",null);web.postVisualStateCallback(android.os.SystemClock.uptimeMillis(),new WebView.VisualStateCallback(){public void onComplete(long id){if(!closed&&active)web.postInvalidateOnAnimation();}});}
@@ -148,7 +163,7 @@ public final class PlayerView extends FrameLayout {
  private void showFullscreen(View v,WebChromeClient.CustomViewCallback cb){
   if(fullscreen!=null){cb.onCustomViewHidden();return;}fullscreenCallback=cb;
   fullscreen=new FrameLayout(getContext()){@Override public void dispatchWindowVisibilityChanged(int visibility){if(visibility!=VISIBLE&&background&&!closed)cover();super.dispatchWindowVisibilityChanged(background&&!closed?VISIBLE:visibility);}};
-  fullscreen.setBackgroundColor(0xff000000);fullscreen.addView(v,new FrameLayout.LayoutParams(-1,-1));Button exit=new Button(getContext());exit.setText("Exit / خروج");exit.setTextSize(18);FrameLayout.LayoutParams p=new FrameLayout.LayoutParams(dp(128),dp(56),Gravity.TOP|Gravity.END);p.topMargin=dp(8);p.setMarginEnd(dp(8));fullscreen.addView(exit,p);exit.setOnClickListener(x->hideFullscreen());web.setVisibility(GONE);addView(fullscreen,new FrameLayout.LayoutParams(-1,-1));
+  fullscreen.setBackgroundColor(0xff000000);fullscreen.addView(v,new FrameLayout.LayoutParams(-1,-1));Button exit=new Button(getContext());exit.setText("Exit / خروج");exit.setTextSize(18);FrameLayout.LayoutParams p=new FrameLayout.LayoutParams(dp(128),dp(56),Gravity.TOP|Gravity.END);p.topMargin=dp(8);p.setMarginEnd(dp(8));fullscreen.addView(exit,p);exit.setOnClickListener(x->hideFullscreen());web.setVisibility(INVISIBLE);addView(fullscreen,new FrameLayout.LayoutParams(-1,-1));
  }
  private int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+0.5f);}
  private void hideFullscreen(){if(fullscreen==null)return;FrameLayout old=fullscreen;fullscreen=null;removeView(old);old.removeAllViews();web.setVisibility(VISIBLE);WebChromeClient.CustomViewCallback cb=fullscreenCallback;fullscreenCallback=null;if(cb!=null)cb.onCustomViewHidden();schedulePicture();}

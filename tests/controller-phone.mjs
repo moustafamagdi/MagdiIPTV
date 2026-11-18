@@ -10,9 +10,9 @@ export async function run(call){
   await check('Disconnected touch shows warning and sends no playback command',"$('controller-alert').open&&phoneTestCommands.length===0&&v.paused&&!v.getAttribute('src')");
   await tap('#controller-close-alert');await evaluate('phoneTestState.connected=true');await wait(1100);await tap('#list .pick');
   await check('Single touch sends selection and shows immediate feedback',"phoneTestCommands.length===1&&phoneTestCommands[0].action==='select'&&!$('selection-feedback').hidden&&$('selection-state').textContent===t('sendingToCar')");
-  await evaluate("phoneTestState.playback={source,phase:'playing',item:filtered[0],time:12,duration:0}");await wait(1200);
-  await check('Car title and playback state appear on phone',"$('controller-title').textContent===filtered[0].name&&$('controller-play').textContent==='Ⅱ'");
-  await tap('#controller-play');await check('Pause control sends a car command',"phoneTestCommands.at(-1).action==='pause'");
+  await evaluate("phoneTestState.playback={source,phase:'playing',item:filtered[0],time:12,duration:0,canPlay:false,canPause:true,next:true,previous:true,canFullscreen:true}");await wait(1200);
+  await check('Car title and playback state appear on phone',"$('controller-title').textContent===filtered[0].name&&$('controller-play').disabled&&!$('controller-pause').disabled");
+  await tap('#controller-pause');await check('Pause control sends a car command',"phoneTestCommands.at(-1).action==='pause'");
   await tap('#controller-next');await check('Next control sends a car command',"phoneTestCommands.at(-1).action==='next'");
   await tap('#controller-full');await check('Fullscreen command does not fullscreen the phone',"phoneTestCommands.at(-1).action==='fullscreen'&&!$('player-box').classList.contains('full')");
   await wait(3200);await check('Playback toast dismisses despite status polling',"$('selection-feedback').hidden");

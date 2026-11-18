@@ -1,4 +1,4 @@
-# Magdi IPTV
+# MM IPTV
 
 Android Auto IPTV player with a phone controller, for your own Xtream subscription, M3U playlist, or optional free public channel directories. The app supports Arabic and English, favorites, and playback history. Package: `com.magdi.iptv`. Requires Android 11 or later.
 
@@ -7,7 +7,7 @@ Android Auto IPTV player with a phone controller, for your own Xtream subscripti
 1. Download the APK from [GitHub Releases](https://github.com/moustafamagdi/MagdiIPTV/releases).
 2. Choose **Free public channels** to browse without an account, or **Connect subscription** to enter your Xtream server address, username and password / M3U URL.
 
-3. Connect Android Auto and open **Magdi IPTV** on the car screen. Choose content from the phone library to play it there.
+3. Connect Android Auto and open **MM IPTV** on the car screen. Choose content from the phone library to play it there.
 
 The phone is a controller only: it does not play video or audio. The release contains no subscription. The app stores your account on the device using Android Keystore and connects to your configured provider. Updates signed with the same certificate can be installed over the existing app to retain settings and favorites.
 
@@ -15,7 +15,7 @@ Live playback supports HLS and MPEG-TS. Movie and series playback depends on the
 
 ## Phone controller
 
-Keep Magdi IPTV open on the car screen. The phone shows whether the car player is ready, the current title and playback state. Browse channels, movies and episodes on the phone, then tap once to send your selection. Play/pause, stop, next/previous, movie seeking, retry and car fullscreen are available from the phone.
+Keep MM IPTV open on the car screen. The phone shows whether the car player is ready, the current title and playback state. Browse channels, movies and episodes on the phone, then tap once to send your selection. Separate Play and Pause buttons follow observed car playback: Play is dimmed while playing, Pause is dimmed while paused, and both are disabled before readiness or after disconnection. Buffering preserves Pause; ended content offers Play; errors offer Retry. Seeking and next/previous are enabled only when the current player and queue support them. Stop, next/previous, movie seeking, retry and car fullscreen are available from the phone.
 
 Without an available car player, selecting content displays a connection notice. Selections are not queued for later. Disconnecting or closing/leaving the car player stops playback and cancels pending selections; reconnecting does not resume automatically. Closing the phone interface does not stop an available car player. Phone browsing can use a different library while the controller continues to show what is playing on the car.
 
@@ -41,7 +41,7 @@ Use **↻** to fetch a fresh copy. A failed refresh leaves the previous library 
 
 ## Android Auto
 
-Android Auto projection uses a legacy integration and compatibility varies with the host and device. Settings includes a King Installer setup screen for the current release. The separate **Magdi IPTV Audio** entry controls content already selected in the app.
+Android Auto projection uses a legacy integration and compatibility varies with the host and device. Settings includes a King Installer setup screen for the current release. The separate **MM IPTV Audio** entry controls content already selected in the app.
 
 On the phone, open **Settings → Log sessions** (also available from the installation setup screen). Select a session and part, then **Copy selected part** or **Export selected part**. Both include the complete selected part and the same diagnostic header, without truncation. They use a snapshot captured when the part is selected; **Refresh list** loads newer events. Account credentials, provider addresses, stream URLs, tokens and channel names are excluded.
 
@@ -62,5 +62,9 @@ Use JDK 17 and the Android SDK with API 36 and Build Tools 36.0.0. Set `ANDROID_
 ```
 
 On Windows, use `gradlew.bat`. The development build requires no subscription credentials. Browser and emulator tests use the synthetic fixtures under `tests/`, including regression tests for touch selection, in-app pickers, settings keyboard and fullscreen. The debug APK includes `ControllerHarnessActivity` with two real WebViews for controller integration tests; it is excluded from the release APK. With the fixture server running, launch that activity, forward its WebView debugger to port 9225, set `ADB` to the adb executable, and run `node tests/controller-native.mjs`. The harness verifies routing, phone media blocking, playback controls, disconnect/reconnect, canceled requests, latest selection and personal M3U. Physical Android Auto compatibility still needs validation on the target car.
+
+The controller uses native player, connection and media-request generations plus ordered reports. Missing native samples recover after six seconds; phone polling recovers within three seconds. Old callbacks cannot replace newer playback or release newer polling slots. No URL fragment binding is used for the owned IPTV page. Diagnostic session storage, copying/export and retention are unchanged.
+
+Run `node tests/controller-controls-native.mjs` for actual phone-button enablement, dimming, loading/buffering/error/ended, seek, CSS/native fullscreen progress, stale callbacks, reconnect without autoplay, polling faults and phone closure. Set `CDP_PORT`, `FIXTURE_PORT`, `ADB_PORT` and `ADB_DEVICE` for isolated instances. Start the fixture server with `CONTROLLER_MEDIA=1` to use the generated 20-second H.264/AAC clip `tests/media/controller.mp4`. The older clip produced an emulator audio-decoder failure after a long seek; this does not establish real-provider codec compatibility. Synthetic buffering and missing-callback faults are explicitly injected by the test.
 
 Third-party notices are in [licenses/](licenses/) and in the app's Settings.
