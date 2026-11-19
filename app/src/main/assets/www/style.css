@@ -84,3 +84,5 @@ dialog{overscroll-behavior:contain}
 html:has(dialog[open]),html:has(dialog[open]) body{overflow:hidden;overscroll-behavior:none}
 
 .seek-step-row{display:flex;justify-content:center;gap:8px;direction:ltr}.seek-step-row button{min-width:80px;min-height:42px;padding:5px 12px}.seek-step-row:has(button[hidden]){display:none}
+.player-box.full .video-controls,.player-box.full .exit-full{transition:opacity .18s}
+.player-box.full.controls-hidden .video-controls,.player-box.full.controls-hidden .exit-full{opacity:0;visibility:hidden;pointer-events:none}
