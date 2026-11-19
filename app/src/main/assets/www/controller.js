@@ -47,7 +47,7 @@ window.Controller=(()=>{
  function snapshot(){
   if(phone||!epoch||!bound)return null;
   const item=pendingItem||current,hasMedia=!!current&&!pendingItem&&!!v.getAttribute('src'),ready=hasMedia?v.readyState:0,error=!!current&&(playbackFault||hasMedia&&!!v.error),ended=hasMedia&&v.ended;
-  const phase=pendingItem?'loading':!item?'idle':error?'error':!ready?'loading':ended?'ended':v.paused?'paused':ready<3?'buffering':'playing';
+  const phase=pendingItem?'loading':!item?'idle':error?'error':recoveryPending?'recovering':!ready?'loading':ended?'ended':v.paused?'paused':ready<3?'buffering':'playing';
   const usable=hasMedia&&ready>0&&!error,queue=filtered.filter(i=>i.type!=='series'),inQueue=!!item&&queue.some(i=>key(i)===key(item)),skip=usable&&inQueue&&queue.length>1;
   return {epoch,request,sequence:++sequence,source,phase,item:item?{id:String(item.id),name:String(item.name).slice(0,500),type:item.type}:null,ready,playing:usable&&!v.paused&&!ended,paused:v.paused,ended,error,canPlay:usable&&(v.paused||ended),canPause:usable&&!v.paused&&!ended,seekable:usable&&item.type!=='live'&&Number.isFinite(v.duration)&&v.duration>0&&v.seekable.length>0,next:skip,previous:skip,canFullscreen:usable,mute:usable,time:hasMedia?Math.max(0,v.currentTime||0):0,duration:hasMedia&&Number.isFinite(v.duration)?v.duration:0,muted:v.muted,wanted:window.__magdiPlayback?.state().wanted||false};
  }

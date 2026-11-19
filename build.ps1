@@ -12,10 +12,10 @@ $seed=Join-Path $PSScriptRoot 'app/build/generated/privateAssets/initial-account
 if((Test-Path -LiteralPath $seed) -and !$Personal){Remove-Item -LiteralPath $seed}
 try {
  $tasks=@(':app:assembleRelease',':app:assembleDebug')
- if($Checks){$tasks+=@(':backend:check',':app:lintRelease',':app:testDebugUnitTest')}
+ if($Checks){& node --test tests/video-health.mjs;if($LASTEXITCODE -ne 0){throw 'Video health checks failed'};$tasks+=@(':backend:check',':app:lintRelease',':app:testDebugUnitTest')}
  & "$toolBase/gradle/gradle-8.11.1/bin/gradle.bat" --no-daemon @tasks
  if($LASTEXITCODE -ne 0){throw 'Build or checks failed'}
- $name=if($Personal){'MM-IPTV-0.1.15-personal.apk'}else{'MM-IPTV-0.1.15.apk'}
+ $name=if($Personal){'MM-IPTV-0.1.16-personal.apk'}else{'MM-IPTV-0.1.16.apk'}
  Copy-Item app/build/outputs/apk/release/app-release.apk "dist/$name"
  & "$toolBase/sdk/build-tools/36.0.0/apksigner.bat" verify --print-certs "dist/$name"
  if($LASTEXITCODE -ne 0){throw 'APK signature invalid'}

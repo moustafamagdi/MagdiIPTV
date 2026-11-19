@@ -97,7 +97,7 @@ public final class PlayerView extends FrameLayout {
     JSONObject answer=new JSONObject();
     try{
      JSONObject args=new JSONObject(payload);Object value;
-     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.15").put("background",background);
+     if("environment".equals(method))value=new JSONObject().put("car",!phone).put("controller",phone).put("version","0.1.16").put("background",background);
      else if("artwork".equals(method))value=artwork.register(args.getString("url"));
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)||"logSessions".equals(method)){boolean ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone)Diagnostics.open((android.app.Activity)getContext(),ar);});value=true;}
@@ -110,7 +110,7 @@ public final class PlayerView extends FrameLayout {
   }
   @JavascriptInterface public void event(String kind,String state){
    if(phone)return;
-   if(kind==null||!kind.matches("play|pause|waiting|playing|error|ended|telemetry|fullscreen"))return;
+   if(kind==null||!kind.matches("play|pause|waiting|playing|error|ended|telemetry|fullscreen|video-frozen|video-recovery-start|video-recovered|video-recovery-failed|video-recovery-exhausted|video-recovery-cancelled"))return;
    timer.post(()->{if(closed)return;try{JSONObject s=new JSONObject(state);long now=android.os.SystemClock.elapsedRealtime();if("telemetry".equals(kind)&&now-lastTelemetry<10000)return;lastTelemetry=now;Diagnostics.event(surface+" media="+kind+" time="+s.optInt("time")+" ready="+s.optInt("ready")+" frames="+s.optLong("frames")+" engine="+(s.optString("engine").matches("hls|ts|native")?s.optString("engine"):"unknown")+" code="+s.optInt("code"));}catch(Exception ignored){}});
   }
   @JavascriptInterface public void carState(String state){if(phone||state==null||state.length()>20000)return;timer.post(()->{if(!closed)try{observe(new JSONObject(state));}catch(JSONException ignored){}});}

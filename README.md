@@ -21,6 +21,14 @@ Without an available car player, selecting content displays a connection notice.
 
 Fullscreen from the phone keeps only the car player and its own transport bar visible. Library tiles, episode Play buttons and page controls are hidden and inert until exit. The video element stays in place; entering/exiting does not reload or resume it. A small circular close button on the physical left edge exits both remote and native fullscreen; the phone fullscreen button also exits a native video overlay.
 
+## Frozen-video recovery
+
+The car player watches presented-frame progress (total frames minus dropped frames) every two seconds. If the media clock advances but video frames stay frozen for 20 seconds, it shows a recovery state on the car and phone and reloads the current stream. Movies and episodes resume near the last position where frames progressed; live channels reconnect without seeking. The same video element and native controller request are retained, including fullscreen.
+
+Recovery is limited to two attempts per selection. A failed reconnect or repeated freeze stops with a Retry message; it does not loop indefinitely. Pause, Stop, a new selection and disconnection cancel applicable work. Detection ignores paused, seeking, ended, audio-only, hidden and inactive players, and restarts its observation window after long timer gaps. It does not compare image pixels: static shots with advancing video frames are healthy. Detection requires supported frame counters and cannot guarantee recovery from provider, network or device decoder faults.
+
+Diagnostics record only fixed recovery event names, attempt counts and existing numeric media samples. No stream addresses or account information are added. Run `node --test tests/video-health.mjs` for detector tests (also included in `build.ps1 -Checks`), and `tests/video-recovery-native.mjs` against the debug harness for synthetic fault-injection coverage. Physical Android Auto/Samsung verification remains necessary.
+
 ## Posters, channel logos and descriptions
 
 Xtream libraries display provider-supplied channel logos and movie/series posters. Personal and public M3U lists also display `tvg-logo` artwork. Images load as they approach the visible area, are resized and temporarily cached in memory, and keep a placeholder if absent, unsupported or unavailable. Supported artwork is HTTP/HTTPS raster imagery (such as PNG, JPEG and WebP); the app does not search third-party databases for missing images.
