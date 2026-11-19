@@ -32,6 +32,9 @@ final class StreamProxy {
     int code=connection.getResponseCode();if(code>=300&&code<400){String location=connection.getHeaderField("Location");connection.disconnect();if(location==null||redirects==6)throw new IOException();current=new URL(current,location);continue;}break;
    }
    int status=connection.getResponseCode();if(status<200||status>=300){connection.disconnect();Diagnostics.event("Stream HTTP status="+status);return reply(status>=400&&status<=599?status:502,"text/plain","Stream unavailable");}
+   String range=null;for(Map.Entry<String,String> h:requestHeaders.entrySet())if(h.getKey().equalsIgnoreCase("Range"))range=h.getValue();
+   String rangeFailure=rangeFailure(status,range,connection.getHeaderField("Content-Range"));
+   if(rangeFailure!=null){connection.disconnect();Diagnostics.event("Stream range response="+rangeFailure);return reply(502,"text/plain","Requested media range unavailable");}
    String type=connection.getContentType();if(type==null)type="application/octet-stream";type=type.split(";")[0];
    InputStream in=connection.getInputStream();
    if(type.toLowerCase(Locale.ROOT).contains("mpegurl")||current.getPath().toLowerCase(Locale.ROOT).endsWith(".m3u8")){
@@ -45,8 +48,24 @@ final class StreamProxy {
    InputStream closing=new FilterInputStream(in){public void close() throws IOException {try{super.close();}finally{active.disconnect();}}};
    Map<String,String> headers=new HashMap<>();headers.put("Cache-Control","no-store");headers.put("Access-Control-Allow-Origin",ORIGIN);
    for(String h:new String[]{"Content-Length","Content-Range","Accept-Ranges"})if(connection.getHeaderField(h)!=null)headers.put(h,connection.getHeaderField(h));
-   return new WebResourceResponse(type,null,status,status==206?"Partial Content":"OK",headers,closing);
+   long skipped=0;if(status==206&&range!=null){Matcher requested=Pattern.compile("bytes=([0-9]+)-[0-9]*").matcher(range);if(requested.matches())skipped=Long.parseLong(requested.group(1));}
+   return new WebResourceResponse(type,null,status,status==206?"Partial Content":"OK",headers,new WebViewRangeInputStream(closing,skipped));
   }catch(Exception e){if(connection!=null)connection.disconnect();Diagnostics.event("Stream connection error="+e.getClass().getSimpleName());return reply(502,"text/plain","Stream connection failed");}
+ }
+ // Never pass a full file as if it were a requested nonzero byte offset.
+ static String rangeFailure(int status,String requested,String received){
+  try{
+   Matcher request=Pattern.compile("bytes=([0-9]+)-([0-9]*)").matcher(requested==null?"":requested);
+   boolean single=request.matches();long start=single?Long.parseLong(request.group(1)):0;
+   if(single&&start>0&&status==200)return "ignored";
+   if(status!=206)return null;
+   Matcher response=Pattern.compile("bytes ([0-9]+)-([0-9]+)/([0-9]+|\\*)").matcher(received==null?"":received);
+   if(!response.matches())return "invalid";
+   long first=Long.parseLong(response.group(1)),last=Long.parseLong(response.group(2));
+   if(last<first||(!"*".equals(response.group(3))&&Long.parseLong(response.group(3))<=last))return "invalid";
+   if(single&&(first!=start||(!request.group(2).isEmpty()&&last>Long.parseLong(request.group(2)))))return "mismatch";
+   return null;
+  }catch(NumberFormatException e){return "invalid";}
  }
  String rewrite(String text,URL base) throws Exception {
   StringBuilder output=new StringBuilder();Pattern uri=Pattern.compile("URI=\"([^\"]+)\"");

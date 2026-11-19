@@ -11,6 +11,17 @@ import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk=32,application=android.app.Application.class)
 public class ProxyTest {
+ @Test public void seekRangesRequireMatchingPartialResponses(){
+  assertNull(StreamProxy.rangeFailure(206,"bytes=1000-","bytes 1000-1999/2000"));
+  assertNull(StreamProxy.rangeFailure(206,"bytes=1000-1999","bytes 1000-1499/2000"));
+  assertNull(StreamProxy.rangeFailure(200,"bytes=0-",null));
+  assertEquals("ignored",StreamProxy.rangeFailure(200,"bytes=1000-",null));
+  assertEquals("mismatch",StreamProxy.rangeFailure(206,"bytes=1000-","bytes 0-1999/2000"));
+  assertEquals("mismatch",StreamProxy.rangeFailure(206,"bytes=1000-1500","bytes 1000-1999/2000"));
+  assertEquals("invalid",StreamProxy.rangeFailure(206,"bytes=1000-",null));
+  assertEquals("invalid",StreamProxy.rangeFailure(206,"bytes=1000-","bytes 1000-2000/2000"));
+  assertEquals("invalid",StreamProxy.rangeFailure(206,"bytes=1000-","bytes 2000-1000/*"));
+ }
  @Test public void tokenHidesCredentialsAndStablePerTarget() {
   StreamProxy p=new StreamProxy();String upstream="https://provider.example/live/test-user/test-password/123.ts";
   String token=p.register(upstream);assertTrue(token.startsWith(StreamProxy.ORIGIN+"/media/"));assertFalse(token.contains("test-user"));assertFalse(token.contains("test-password"));assertEquals(token,p.register(upstream));

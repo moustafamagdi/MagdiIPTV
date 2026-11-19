@@ -1,7 +1,7 @@
 'use strict';
 // One owned local document; Android issues connection/request generations, not URL fragments.
 window.Controller=(()=>{
- let phone=true,epoch=0,request=0,version=0,beginVersion=0,beginQueue=Promise.resolve(),bound=false,sequence=0,pendingItem=null,last={connected:false,revision:-1,playback:{}},pollSlot=null,pollTicket=0,intent=0;
+ let phone=true,epoch=0,request=0,version=0,beginVersion=0,beginQueue=Promise.resolve(),bound=false,sequence=0,pendingItem=null,last={connected:false,revision:-1,playback:{}},pollSlot=null,pollTicket=0,intent=0,seekDragging=false;
  const isPhone=()=>phone;
  function configure(environment){phone=!!environment.controller;document.body.classList.toggle('controller',phone);$('controller-panel').hidden=!phone;$('background').closest('label').hidden=true;if(phone){v.pause();v.removeAttribute('src');v.load();document.title='MM IPTV Controller';display(last);poll();}}
  function alertDisconnected(){notice(t('carRequired'));$('controller-alert-text').textContent=t('carRequired');if(!$('controller-alert').open)$('controller-alert').showModal();}
@@ -9,11 +9,11 @@ window.Controller=(()=>{
   if(state&&Number(state.revision??0)<Number(last.revision??-1))return;
   last=state||{connected:false,revision:last.revision,playback:{}};const p=last.connected?last.playback||{}:{},usable=last.connected&&last.fresh!==false;
   $('controller-connection').textContent=t(last.connected?'carConnected':'carDisconnected');$('controller-panel').classList.toggle('connected',!!last.connected);
-  $('controller-title').textContent=p.item?.name||t('carNothing');$('controller-phase').textContent=p.item?(last.fresh===false&&!['loading','idle'].includes(p.phase)?t('statusRecovering'):phaseLabel(p.phase)):t('controllerHint');
+  $('controller-title').textContent=p.item?.name||t('carNothing');$('controller-phase').textContent=p.item?(last.fresh===false&&!['loading','idle'].includes(p.phase)?t('statusRecovering'):p.seekIssue?t(p.seekIssue):phaseLabel(p.phase)):t('controllerHint');
   const controls={play:usable&&p.canPlay,pause:usable&&p.canPause,stop:last.connected&&!!p.item,next:usable&&p.next,previous:usable&&p.previous,retry:last.connected&&!!p.item,full:usable&&p.canFullscreen};
   for(const [id,enabled] of Object.entries(controls))$('controller-'+id).disabled=!enabled;
-  const seekable=!!(usable&&p.seekable);$('controller-seek').hidden=!seekable;$('controller-seek').disabled=!seekable;
-  if(seekable&&document.activeElement!==$('controller-seek'))$('controller-seek').value=String((p.time||0)/p.duration*100);
+  const seekable=!!(usable&&p.seekable);$('controller-seek').hidden=!seekable;$('controller-seek').disabled=!seekable;for(const id of ['controller-back','controller-forward']){$(id).disabled=!seekable;$(id).hidden=p.item?.type==='live';}
+  if(seekable&&!seekDragging)$('controller-seek').value=String((p.time||0)/p.duration*100);
   $('controller-time').textContent=!p.item?'':p.item.type==='live'?'● LIVE':clock(p.time||0)+' / '+clock(p.duration);
   current=last.connected&&p.source===source?p.item||null:null;if(current){$('selection-title').textContent=current.name;if(playbackPhase!==(p.phase||'idle'))setPlaybackPhase(p.phase||'idle');else updateCards();}else {$('selection-feedback').hidden=true;setPlaybackPhase('idle');}
  }
@@ -47,9 +47,9 @@ window.Controller=(()=>{
  function snapshot(){
   if(phone||!epoch||!bound)return null;
   const item=pendingItem||current,hasMedia=!!current&&!pendingItem&&!!v.getAttribute('src'),ready=hasMedia?v.readyState:0,error=!!current&&(playbackFault||hasMedia&&!!v.error),ended=hasMedia&&v.ended;
-  const phase=pendingItem?'loading':!item?'idle':error?'error':recoveryPending?'recovering':!ready?'loading':ended?'ended':v.paused?'paused':ready<3?'buffering':'playing';
+  const phase=pendingItem?'loading':!item?'idle':error?'error':pendingSeek?'seeking':recoveryPending?'recovering':!ready?'loading':ended?'ended':v.paused?'paused':ready<3?'buffering':'playing';
   const usable=hasMedia&&ready>0&&!error,queue=filtered.filter(i=>i.type!=='series'),inQueue=!!item&&queue.some(i=>key(i)===key(item)),skip=usable&&inQueue&&queue.length>1;
-  return {epoch,request,sequence:++sequence,source,phase,item:item?{id:String(item.id),name:String(item.name).slice(0,500),type:item.type}:null,ready,playing:usable&&!v.paused&&!ended,paused:v.paused,ended,error,canPlay:usable&&(v.paused||ended),canPause:usable&&!v.paused&&!ended,seekable:usable&&item.type!=='live'&&Number.isFinite(v.duration)&&v.duration>0&&v.seekable.length>0,next:skip,previous:skip,canFullscreen:usable,mute:usable,time:hasMedia?Math.max(0,v.currentTime||0):0,duration:hasMedia&&Number.isFinite(v.duration)?v.duration:0,muted:v.muted,wanted:window.__magdiPlayback?.state().wanted||false};
+  return {epoch,request,sequence:++sequence,source,phase,item:item?{id:String(item.id),name:String(item.name).slice(0,500),type:item.type}:null,ready,playing:usable&&!v.paused&&!ended,paused:v.paused,ended,error,canPlay:usable&&(v.paused||ended),canPause:usable&&!v.paused&&!ended,seekIssue:seekIssue||'',seekable:usable&&canSeek(),next:skip,previous:skip,canFullscreen:usable,mute:usable,time:hasMedia?Math.max(0,v.currentTime||0):0,duration:hasMedia&&Number.isFinite(v.duration)?v.duration:0,muted:v.muted,wanted:window.__magdiPlayback?.state().wanted||false};
  }
  function publish(){const state=snapshot();if(state)try{Android.carState(JSON.stringify(state));}catch{}}
  async function receive(packet){
@@ -61,7 +61,7 @@ window.Controller=(()=>{
     case 'pause':pause();break;case 'resume':resume();break;case 'stop':stop();break;
     case 'next':skip(1);break;case 'previous':skip(-1);break;case 'retry':if(current)play(current);break;
     case 'mute':v.muted=!v.muted;break;case 'fullscreen':toggleFullscreen();break;
-    case 'seek':if(current?.type!=='live'&&Number.isFinite(v.duration)&&v.seekable.length){const target=Math.max(0,Math.min(100,Number(packet.percent)||0))/100*v.duration;v.currentTime=Math.max(v.seekable.start(0),Math.min(v.seekable.end(v.seekable.length-1),target));}break;
+    case 'seek':seekTo(Number(packet.percent)/100*v.duration);break;case 'seekBy':seekBy(Number(packet.seconds));break;
    }publish();return;
   }
   cancelPending();const generation=version,session=epoch,ctx=packet.context||{},item=packet.item;
@@ -84,7 +84,7 @@ window.Controller=(()=>{
  function init(){
   $('controller-close-alert').onclick=()=>$('controller-alert').close();$('controller-play').onclick=()=>command('resume');$('controller-pause').onclick=()=>command('pause');
   for(const action of ['stop','next','previous','retry'])$('controller-'+action).onclick=()=>command(action);
-  $('controller-full').onclick=()=>command('fullscreen');$('controller-seek').onchange=()=>command('seek',{percent:Number($('controller-seek').value)});
+  $('controller-full').onclick=()=>command('fullscreen');$('controller-seek').onpointerdown=()=>seekDragging=true;$('controller-seek').onpointercancel=$('controller-seek').onpointerup=()=>seekDragging=false;$('controller-seek').onchange=()=>{seekDragging=false;command('seek',{percent:Number($('controller-seek').value)});};$('controller-back').onclick=()=>command('seekBy',{seconds:-10});$('controller-forward').onclick=()=>command('seekBy',{seconds:10});
   setInterval(()=>phone?poll():publish(),500);
   window.addEventListener('storage',e=>{if(source&&e.key?.startsWith(source+':')){favorites=readStore(source+':favorites',[]);recent=readStore(source+':recent',[]);positions=readStore(source+':positions',{});if(tab==='favorites'||tab==='recent'){items=tab==='favorites'?favorites:recent;filter();}else updateCards();}});
  }

@@ -15,7 +15,7 @@ try {
  if($Checks){& node --test tests/video-health.mjs;if($LASTEXITCODE -ne 0){throw 'Video health checks failed'};$tasks+=@(':backend:check',':app:lintRelease',':app:testDebugUnitTest')}
  & "$toolBase/gradle/gradle-8.11.1/bin/gradle.bat" --no-daemon @tasks
  if($LASTEXITCODE -ne 0){throw 'Build or checks failed'}
- $name=if($Personal){'MM-IPTV-0.1.16-personal.apk'}else{'MM-IPTV-0.1.16.apk'}
+ $name=if($Personal){'MM-IPTV-0.1.17-personal.apk'}else{'MM-IPTV-0.1.17.apk'}
  Copy-Item app/build/outputs/apk/release/app-release.apk "dist/$name"
  & "$toolBase/sdk/build-tools/36.0.0/apksigner.bat" verify --print-certs "dist/$name"
  if($LASTEXITCODE -ne 0){throw 'APK signature invalid'}

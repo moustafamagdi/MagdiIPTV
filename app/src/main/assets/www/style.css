@@ -82,3 +82,5 @@ body.fullscreen .player-box.full{position:absolute;inset:0;width:100%;height:100
    Lock the page without fixing/reparenting its body or resetting its scroll position. */
 dialog{overscroll-behavior:contain}
 html:has(dialog[open]),html:has(dialog[open]) body{overflow:hidden;overscroll-behavior:none}
+
+.seek-step-row{display:flex;justify-content:center;gap:8px;direction:ltr}.seek-step-row button{min-width:80px;min-height:42px;padding:5px 12px}.seek-step-row:has(button[hidden]){display:none}

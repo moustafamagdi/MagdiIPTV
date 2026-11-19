@@ -21,6 +21,16 @@ Without an available car player, selecting content displays a connection notice.
 
 Fullscreen from the phone keeps only the car player and its own transport bar visible. Library tiles, episode Play buttons and page controls are hidden and inert until exit. The video element stays in place; entering/exiting does not reload or resume it. A small circular close button on the physical left edge exits both remote and native fullscreen; the phone fullscreen button also exits a native video overlay.
 
+## Seeking and ten-second controls
+
+Movies and episodes have Back 10 s / Forward 10 s controls on the phone and car, alongside the seek bar. They are disabled when no seekable car player is available and hidden for live channels. Seeking preserves Pause, later seeks replace earlier targets, and an explicit seek cancels an older saved-position resume. Phone controls never play local media.
+
+A seek that stays unresolved for 18 seconds reloads once at the selected position. Another 18-second timeout stops that media load and offers Retry. Stop, a new selection or disconnection cancels pending recovery. A source that cannot supply the requested position shows a clear notice instead of silently clamping the jump or waiting forever.
+
+HTTP byte ranges need special handling in the intercepted WebView stream: [Chromium's input-stream reader](https://github.com/chromium/chromium/blob/main/components/embedder_support/android/util/input_stream_reader.cc) seeks the Java stream by the original offset. Our upstream HTTP 206 body already begins there, so the adapter credits that initial skip instead of discarding the offset twice. Network buffer availability is not treated as the whole file size. Invalid/mismatched or ignored nonzero ranges are rejected with a fixed diagnostic reason, without logging addresses.
+
+Run the throttled synthetic range fixture with `node scripts/seek-fixture.mjs` (port 8794), then `tests/seek-native.mjs` against the debug controller harness. Generate its local media first as described in `tests/media/README.md`. These tests exercise jumps outside the downloaded buffer, both fullscreen modes, rapid seeks, failure/retry and cancellation. Provider codec/range support and physical Android Auto still require device testing.
+
 ## Frozen-video recovery
 
 The car player watches presented-frame progress (total frames minus dropped frames) every two seconds. If the media clock advances but video frames stay frozen for 20 seconds, it shows a recovery state on the car and phone and reloads the current stream. Movies and episodes resume near the last position where frames progressed; live channels reconnect without seeking. The same video element and native controller request are retained, including fullscreen.
@@ -62,6 +72,8 @@ The store keeps the latest **40 parts** for at most **7 days**, deleting the old
 Settings and other dialogs contain scroll gestures at their edges. The background page stays locked while any dialog remains open, including a keyboard or source picker over Settings; closing the last dialog restores normal page scrolling at its existing position.
 
 ## Embedded keyboard
+
+The Arabic layout includes all 28 base letters, including د and ذ, plus ء، أ، إ، آ، ؤ، ئ، ة، ى. A regression test checks insertion, touch activation and reachable keys at narrow and landscape sizes in both interface languages (`tests/arabic-keyboard-native.mjs`).
 
 On the car, tap the server address, username, password or M3U URL field to open the embedded keyboard. On the phone, use the keyboard button beside a field or type normally. Arabic/English, uppercase/lowercase, digits and symbols are available. Done applies the draft to the field; Cancel or Back discards it. Use the existing Save button to save the account. Passwords are masked by default with an optional reveal button.
 
