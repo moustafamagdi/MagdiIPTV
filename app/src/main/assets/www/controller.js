@@ -14,6 +14,7 @@ window.Controller=(()=>{
   for(const [id,enabled] of Object.entries(controls))$('controller-'+id).disabled=!enabled;
   const seekable=!!(usable&&p.seekable);$('controller-seek').hidden=!seekable;$('controller-seek').disabled=!seekable;for(const id of ['controller-back','controller-forward']){$(id).disabled=!seekable;$(id).hidden=p.item?.type==='live';}
   if(seekable&&!seekDragging)$('controller-seek').value=String((p.time||0)/p.duration*100);
+  $('controller-restart').hidden=!(p.item&&p.item.type!=='live'&&p.phase==='error');$('controller-restart').disabled=!last.connected;
   $('controller-time').textContent=!p.item?'':p.item.type==='live'?'● LIVE':clock(p.time||0)+' / '+clock(p.duration);
   current=last.connected&&p.source===source?p.item||null:null;if(current){$('selection-title').textContent=current.name;if(playbackPhase!==(p.phase||'idle'))setPlaybackPhase(p.phase||'idle');else updateCards();}else {$('selection-feedback').hidden=true;setPlaybackPhase('idle');}
  }
@@ -56,11 +57,11 @@ window.Controller=(()=>{
   if(phone||!epoch||packet.epoch!==epoch||packet.request<request)return;
   request=packet.request;bound=true;
   if(packet.action!=='select'){
-   if(['stop','retry','next','previous'].includes(packet.action))cancelPending();
+   if(['stop','retry','restart','next','previous'].includes(packet.action))cancelPending();
    switch(packet.action){
     case 'pause':pause();break;case 'resume':resume();break;case 'stop':stop();break;
     case 'next':skip(1);break;case 'previous':skip(-1);break;case 'retry':if(current)play(current);break;
-    case 'mute':v.muted=!v.muted;break;case 'fullscreen':toggleFullscreen();break;
+    case 'restart':restartFromBeginning();break;case 'mute':v.muted=!v.muted;break;case 'fullscreen':toggleFullscreen();break;
     case 'seek':seekTo(Number(packet.percent)/100*v.duration);break;case 'seekBy':seekBy(Number(packet.seconds));break;
    }publish();return;
   }
@@ -83,7 +84,7 @@ window.Controller=(()=>{
  function localSelection(){if(!phone)cancelPending();}
  function init(){
   $('controller-close-alert').onclick=()=>$('controller-alert').close();$('controller-play').onclick=()=>command('resume');$('controller-pause').onclick=()=>command('pause');
-  for(const action of ['stop','next','previous','retry'])$('controller-'+action).onclick=()=>command(action);
+  for(const action of ['stop','next','previous','retry','restart'])$('controller-'+action).onclick=()=>command(action);
   $('controller-full').onclick=()=>command('fullscreen');$('controller-seek').onpointerdown=()=>seekDragging=true;$('controller-seek').onpointercancel=$('controller-seek').onpointerup=()=>seekDragging=false;$('controller-seek').onchange=()=>{seekDragging=false;command('seek',{percent:Number($('controller-seek').value)});};$('controller-back').onclick=()=>command('seekBy',{seconds:-10});$('controller-forward').onclick=()=>command('seekBy',{seconds:10});
   setInterval(()=>phone?poll():publish(),500);
   window.addEventListener('storage',e=>{if(source&&e.key?.startsWith(source+':')){favorites=readStore(source+':favorites',[]);recent=readStore(source+':recent',[]);positions=readStore(source+':positions',{});if(tab==='favorites'||tab==='recent'){items=tab==='favorites'?favorites:recent;filter();}else updateCards();}});

@@ -19,6 +19,12 @@ public class CarControllerTest {
  @After public void cleanup(){car.close();phone.close();activity.finish();}
  private JSONObject command()throws Exception{return new JSONObject().put("action","select").put("epoch",CarController.status().getLong("epoch")).put("item",new JSONObject().put("id","1").put("type","live").put("name","Synthetic channel"));}
  private WebView web(PlayerView view)throws Exception{java.lang.reflect.Field f=PlayerView.class.getDeclaredField("web");f.setAccessible(true);return (WebView)f.get(view);}
+ @Test public void restartRejectsLiveAndStaleRequestsAndCreatesNewVodLease()throws Exception{
+  selected();assertFalse(CarController.command(action("restart")));
+  JSONObject movie=command();movie.getJSONObject("item").put("type","vod");assertTrue(CarController.command(movie));
+  JSONObject restart=action("restart");long before=CarController.request();assertTrue(CarController.command(restart));assertTrue(CarController.request()>before);
+  assertFalse(CarController.command(new JSONObject(restart.toString()).put("request",before)));CarController.detach(car);assertFalse(CarController.command(action("restart")));
+ }
  @Test public void missingCarRejectsCommandWithoutQueue()throws Exception{assertFalse(CarController.command(command()));CarController.attach(car);CarController.pageReady(car);assertFalse(shadowOf(web(car)).getLastEvaluatedJavascript().contains("Controller.receive"));}
  @Test public void connectedHostMustFinishInitializingBeforeCommands()throws Exception{CarController.attach(car);assertFalse(CarController.status().getBoolean("connected"));assertFalse(CarController.command(command()));CarController.pageReady(car);assertTrue(CarController.status().getBoolean("connected"));assertTrue(CarController.command(command()));assertTrue(shadowOf(web(car)).getLastEvaluatedJavascript().contains("Controller.receive"));}
  @Test public void disconnectedCommandsNeverReplayAfterReconnect()throws Exception{CarController.attach(car);CarController.pageReady(car);JSONObject old=command();CarController.detach(car);assertFalse(CarController.command(old));CarController.attach(car);CarController.pageReady(car);assertFalse(CarController.command(old));assertTrue(CarController.command(command()));}

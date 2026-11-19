@@ -10,6 +10,7 @@ import java.util.regex.*;
 
 /** App-only URL interception: no listening server, open proxy port, or upstream credentials in page URLs. */
 final class StreamProxy {
+ private static final java.util.concurrent.atomic.AtomicLong rangeIds=new java.util.concurrent.atomic.AtomicLong();
  static final String ORIGIN="https://app.magdi.local";
  private final LinkedHashMap<String,String> targets=new LinkedHashMap<>(64,.75f,true);
  private final Map<String,String> reverse=new HashMap<>();
@@ -22,7 +23,8 @@ final class StreamProxy {
  static WebResourceResponse reply(int code,String mime,String text){return new WebResourceResponse(mime,"UTF-8",code,code==200?"OK":"Request failed",Collections.singletonMap("Cache-Control","no-store"),new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));}
  WebResourceResponse open(String token,Map<String,String> requestHeaders){
   String url;synchronized(this){url=targets.get(token);}if(url==null)return reply(404,"text/plain","Media expired; select it again");
-  HttpURLConnection connection=null;
+  HttpURLConnection connection=null;long rangeId=0,started=System.nanoTime();
+  for(Map.Entry<String,String> h:requestHeaders.entrySet())if(h.getKey().equalsIgnoreCase("Range")&&h.getValue().matches("bytes=[1-9][0-9]*-[0-9]*")){rangeId=rangeIds.incrementAndGet();Diagnostics.event("Range request id="+rangeId+" started");break;}
   try {
    URL current=new URL(url);
    for(int redirects=0;redirects<=6;redirects++){
@@ -31,7 +33,7 @@ final class StreamProxy {
     for(Map.Entry<String,String> h:requestHeaders.entrySet())if(h.getKey().equalsIgnoreCase("Range"))connection.setRequestProperty("Range",h.getValue());
     int code=connection.getResponseCode();if(code>=300&&code<400){String location=connection.getHeaderField("Location");connection.disconnect();if(location==null||redirects==6)throw new IOException();current=new URL(current,location);continue;}break;
    }
-   int status=connection.getResponseCode();if(status<200||status>=300){connection.disconnect();Diagnostics.event("Stream HTTP status="+status);return reply(status>=400&&status<=599?status:502,"text/plain","Stream unavailable");}
+   int status=connection.getResponseCode();if(rangeId!=0)Diagnostics.event("Range response id="+rangeId+" status="+status+" headers-ms="+((System.nanoTime()-started)/1000000));if(status<200||status>=300){connection.disconnect();Diagnostics.event("Stream HTTP status="+status);return reply(status>=400&&status<=599?status:502,"text/plain","Stream unavailable");}
    String range=null;for(Map.Entry<String,String> h:requestHeaders.entrySet())if(h.getKey().equalsIgnoreCase("Range"))range=h.getValue();
    String rangeFailure=rangeFailure(status,range,connection.getHeaderField("Content-Range"));
    if(rangeFailure!=null){connection.disconnect();Diagnostics.event("Stream range response="+rangeFailure);return reply(502,"text/plain","Requested media range unavailable");}
@@ -49,8 +51,9 @@ final class StreamProxy {
    Map<String,String> headers=new HashMap<>();headers.put("Cache-Control","no-store");headers.put("Access-Control-Allow-Origin",ORIGIN);
    for(String h:new String[]{"Content-Length","Content-Range","Accept-Ranges"})if(connection.getHeaderField(h)!=null)headers.put(h,connection.getHeaderField(h));
    long skipped=0;if(status==206&&range!=null){Matcher requested=Pattern.compile("bytes=([0-9]+)-[0-9]*").matcher(range);if(requested.matches())skipped=Long.parseLong(requested.group(1));}
-   return new WebResourceResponse(type,null,status,status==206?"Partial Content":"OK",headers,new WebViewRangeInputStream(closing,skipped));
-  }catch(Exception e){if(connection!=null)connection.disconnect();Diagnostics.event("Stream connection error="+e.getClass().getSimpleName());return reply(502,"text/plain","Stream connection failed");}
+   InputStream measured=rangeId==0?closing:new RangeDiagnosticsInputStream(closing,rangeId,Diagnostics::event);
+   return new WebResourceResponse(type,null,status,status==206?"Partial Content":"OK",headers,new WebViewRangeInputStream(measured,skipped));
+  }catch(Exception e){if(connection!=null)connection.disconnect();if(rangeId!=0)Diagnostics.event("Range request id="+rangeId+" connection-failed");Diagnostics.event("Stream connection error="+e.getClass().getSimpleName());return reply(502,"text/plain","Stream connection failed");}
  }
  // Never pass a full file as if it were a requested nonzero byte offset.
  static String rangeFailure(int status,String requested,String received){

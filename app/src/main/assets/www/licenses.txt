@@ -1,4 +1,4 @@
-MM IPTV 0.1.18
+MM IPTV 0.1.19
 
 IPTVnator embedded Java backend
 Source: https://github.com/4gray/iptvnator/tree/master/tv-shell/android/backend

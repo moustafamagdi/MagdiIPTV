@@ -8,7 +8,7 @@
    <div class="controller-heading"><strong data-i18n="controllerTitle">ريموت شاشة العربية</strong><span id="controller-connection" role="status"></span></div>
    <h2 id="controller-title"></h2><p id="controller-phase" role="status"></p><span id="controller-time"></span>
    <input id="controller-seek" type="range" min="0" max="100" value="0" aria-label="Seek on car" hidden>
-   <div class="controller-buttons"><button id="controller-previous" aria-label="Previous">⏮</button><button id="controller-play" data-i18n="playControl" disabled>Play</button><button id="controller-pause" data-i18n="pauseControl" disabled>Pause</button><button id="controller-next" aria-label="Next">⏭</button><button id="controller-back" data-i18n="back10" disabled>−10 s</button><button id="controller-forward" data-i18n="forward10" disabled>+10 s</button><button id="controller-stop" data-i18n="stop">إيقاف</button><button id="controller-retry" data-i18n="retry">إعادة المحاولة</button><button id="controller-full" data-i18n="carFullscreen">ملء شاشة العربية</button></div>
+   <div class="controller-buttons"><button id="controller-previous" aria-label="Previous">⏮</button><button id="controller-play" data-i18n="playControl" disabled>Play</button><button id="controller-pause" data-i18n="pauseControl" disabled>Pause</button><button id="controller-next" aria-label="Next">⏭</button><button id="controller-back" data-i18n="back10" disabled>−10 s</button><button id="controller-forward" data-i18n="forward10" disabled>+10 s</button><button id="controller-stop" data-i18n="stop">إيقاف</button><button id="controller-retry" data-i18n="retry">إعادة المحاولة</button><button id="controller-restart" data-i18n="startBeginning" hidden>Start from beginning</button><button id="controller-full" data-i18n="carFullscreen">ملء شاشة العربية</button></div>
   </section>
   <section id="welcome" class="welcome">
    <span class="eyebrow">MM IPTV • WEB PLAYER</span><h1 data-i18n="welcome">شاشتك. قنواتك. اختيارك.</h1><p data-i18n="intro">شاهد القنوات العامة المجانية، أو أضف اشتراكك للقنوات والأفلام والمسلسلات.</p>
@@ -24,7 +24,7 @@
       <video id="video" playsinline webkit-playsinline preload="none"></video>
       <div id="player-placeholder"><span class="play-orbit">▶</span><h2 data-i18n="pick">اختر ما تحب مشاهدته</h2><p data-i18n="pickHint">اختر قناة أو فيلمًا لبدء التشغيل</p></div>
       <div id="playback-message" class="playback-message" hidden></div>
-      <button id="exit-full" class="exit-full" hidden data-i18n-label="exitFull" aria-label="Exit fullscreen" title="Exit fullscreen"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5L15 15M15 5L5 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <button id="restart-start" class="restart-start primary" data-i18n="startBeginning" hidden>Start from beginning</button><button id="exit-full" class="exit-full" hidden data-i18n-label="exitFull" aria-label="Exit fullscreen" title="Exit fullscreen"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5L15 15M15 5L5 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
       <div class="video-controls" id="video-controls" hidden>
        <input id="seek" type="range" min="0" max="100" value="0" aria-label="Seek" hidden>
        <div class="seek-step-row"><button id="seek-back" data-i18n="back10" disabled>−10 s</button><button id="seek-forward" data-i18n="forward10" disabled>+10 s</button></div><div class="control-row"><button id="previous" aria-label="Previous">⏮</button><button id="play-pause" aria-label="Play or pause">Ⅱ</button><button id="next" aria-label="Next">⏭</button><span id="time">LIVE</span><button id="mute" aria-label="Mute">♪</button><button id="full" aria-pressed="false" aria-label="Fullscreen">⛶</button></div>
@@ -44,7 +44,7 @@
   <div id="notice" class="notice" role="status" hidden></div>
  </main>
  <div id="selection-feedback" class="selection-feedback" role="status" aria-live="polite" hidden><span class="feedback-indicator" aria-hidden="true"></span><div class="feedback-copy"><strong id="selection-title"></strong><span id="selection-state"></span></div><button id="show-player" data-i18n="showPlayer">عرض المشغّل</button></div>
- <footer><span>MM IPTV <b>0.1.18</b></span><span data-i18n="footer">مشغّل شخصي • مصادر عامة اختيارية</span></footer>
+ <footer><span>MM IPTV <b>0.1.19</b></span><span data-i18n="footer">مشغّل شخصي • مصادر عامة اختيارية</span></footer>
  <dialog id="controller-alert"><div class="dialog-header"><h2 data-i18n="controllerTitle">ريموت شاشة العربية</h2><button id="controller-close-alert" aria-label="Close">✕</button></div><p id="controller-alert-text"></p></dialog>
  <dialog id="settings-dialog"><div class="dialog-header"><h2 data-i18n="account">الحساب والإعدادات</h2><button class="quiet" id="close-settings" aria-label="Close">✕</button></div>
   <form id="account-form"><label><span data-i18n="source">نوع المصدر</span><select id="source-mode"><option value="xtream">Xtream Codes</option><option value="m3u">M3U URL</option></select></label>

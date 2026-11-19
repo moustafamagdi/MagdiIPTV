@@ -36,7 +36,7 @@ final class CarController {
  static boolean command(JSONObject packet)throws JSONException {
   if(target==null||!ready||packet.optLong("epoch",-1)!=epoch)return false;
   String action=packet.optString("action");
-  if(!java.util.Arrays.asList("select","pause","resume","stop","next","previous","seek","seekBy","mute","fullscreen","retry").contains(action)||packet.toString().length()>100000)return false;
+  if(!java.util.Arrays.asList("select","pause","resume","stop","next","previous","seek","seekBy","mute","fullscreen","retry","restart").contains(action)||packet.toString().length()>100000)return false;
   if(!action.equals("select")&&!action.equals("stop")&&packet.optLong("request",-1)!=request)return false;
   boolean fresh=lastReport!=0&&android.os.SystemClock.elapsedRealtime()-lastReport<6500;
   String capability=action.equals("resume")?"canPlay":action.equals("pause")?"canPause":(action.equals("seek")||action.equals("seekBy"))?"seekable":action.equals("fullscreen")?"canFullscreen":action;
@@ -44,9 +44,10 @@ final class CarController {
   if(action.equals("seek")&&!Double.isFinite(packet.optDouble("percent",Double.NaN)))return false;
   if(action.equals("seekBy")&&argsSecondsInvalid(packet))return false;
   if(action.equals("retry")&&selection==null)return false;
+  if(action.equals("restart")&&(selection==null||selection.optString("type").equals("live")))return false;
   if(action.equals("select")){JSONObject next=packet.optJSONObject("item");if(next==null||!java.util.Arrays.asList("live","vod","episode").contains(next.optString("type")))return false;reset(item(next));}
   else if(action.equals("stop"))reset(null);
-  else if(java.util.Arrays.asList("retry","next","previous").contains(action))reset(selection);
+  else if(java.util.Arrays.asList("retry","restart","next","previous").contains(action))reset(selection);
   packet.put("request",request);target.controllerCommand(packet);return true;
  }
  private static boolean argsSecondsInvalid(JSONObject packet){double seconds=packet.optDouble("seconds",Double.NaN);return seconds!=10&&seconds!=-10;}
