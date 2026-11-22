@@ -79,6 +79,8 @@ On the car, tap the server address, username, password or M3U URL field to open 
 
 ## Build and test
 
+From **0.1.26**, the projected car WebView starts at the car host's display density, avoiding a small top-left page when Chromium has initialized with the phone's density. A real car-service disconnect invalidates the old view; the next car attachment builds a fresh local player page. Temporary covers in the same connection retain the existing session. Phone scaling and controller-only playback restrictions remain unchanged. See [verification](research/CAR_VIEWPORT_0.1.26.md).
+
 Use JDK 17 and the Android SDK with API 36 and Build Tools 36.0.0. Set `ANDROID_HOME` or configure `sdk.dir` in `local.properties`. Run:
 
 ```sh

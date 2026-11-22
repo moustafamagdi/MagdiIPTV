@@ -41,6 +41,9 @@ public final class PlayerView extends FrameLayout {
   }};
   web.setBackgroundColor(0xff091622);addView(web,new FrameLayout.LayoutParams(-1,-1));
   web.getSettings().setJavaScriptEnabled(true);web.getSettings().setDomStorageEnabled(true);
+  // The projected host can have a different density from Chromium's phone default.
+  // Initial scale is a physical percentage; keep phone browsing at its default.
+  if(!phone)web.setInitialScale(Math.max(1,Math.round(c.getResources().getDisplayMetrics().density*100)));
   web.getSettings().setAllowFileAccess(false);web.getSettings().setAllowContentAccess(false);
   web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
   web.getSettings().setMediaPlaybackRequiresUserGesture(false);web.getSettings().setSupportMultipleWindows(false);
