@@ -103,3 +103,7 @@ If resuming a saved film/episode position fails, Retry attempts that position ag
 ## Simple support reports
 
 The phone now opens **Support & diagnostics** with an installation Support ID, consent-based automatic reports, Send report now, deletion, and simple manual sharing. Previous complete local sessions remain under Advanced during rollout. See [support and privacy](SUPPORT.md).
+
+## Shared Support ID (0.1.21)
+
+The updated MM apps can show one random Support ID on the same Android profile through MM Auto. Updates preserve data; linking keeps old installation IDs searchable. Consent remains separate per app, with renewed consent for shared-ID reporting. Settings now group secondary troubleshooting tools under Advanced. See [support guide](SUPPORT.md) for setup, privacy, deletion and test limitations.

@@ -13,11 +13,12 @@ Deno.serve(async req=>{
  }catch{return new Response('',{status:400});}
  const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token));
  payload.p_hash=Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
+ payload.p_device_hash=payload.deviceToken?Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload.deviceToken))),b=>b.toString(16).padStart(2,'0')).join(''):null;delete payload.deviceToken;
  try{
   const secret=JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')||'{}').default;
   const legacy=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');const key=secret||legacy;
   const headers={'Content-Type':'application/json','apikey':key};if(!secret)headers.Authorization='Bearer '+legacy;
-  const result=await fetch(Deno.env.get('SUPABASE_URL')+'/rest/v1/rpc/support_ingest',{method:'POST',headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});
+  const result=await fetch(Deno.env.get('SUPABASE_URL')+'/rest/v1/rpc/support_ingest_device',{method:'POST',headers,body:JSON.stringify(payload),signal:AbortSignal.timeout(10000)});
   if(!result.ok)return new Response('',{status:503});
   const status=await result.json();return new Response('',{status:[200,400,403,429].includes(status)?status:503});
  }catch{return new Response('',{status:503});}
