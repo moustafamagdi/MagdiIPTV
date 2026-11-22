@@ -31,3 +31,8 @@ Tables have RLS enabled, no anon/authenticated grants/policies. The service-role
 Run the Java SupportPolicyTest/SupportFlowTest suites in both applications. They cover the real native screen buttons/consent, opt-in/out, manual sends, failure/deletion behavior, bounded history and closed data vocabulary. Backend `validation.test.mjs` checks malformed and private input rejection. Live endpoint testing also covers successful upload, idempotent retries, wrong/missing credentials, oversized bodies, ownership-enforced deletion, administrative lookup, and denied anon/authenticated database access.
 
 This is app diagnostics, not Android Auto system logs. Playback counters do not prove audible sound or compatibility with a physical car. An absent report does not prove an absent fault.
+
+## MM Auto extension
+
+The allow_mm_auto_support migration (add-mm-auto.sql) extends the app discriminator to auto. Edge Function v2 also accepts closed download/install/release-check/repair/permission events, fixed MM app targets, enumerated install methods/source types and validated version strings. Auto never uploads raw installer output or local APK paths. The same owner inbox shows app=auto; existing IPTV/Tube payloads still pass live ingestion tests. Permission bitmask: 1=request-install permission, 2=Shizuku running, 4=Shizuku granted. A matched installer pair is not proof of Android Auto visibility.
+
