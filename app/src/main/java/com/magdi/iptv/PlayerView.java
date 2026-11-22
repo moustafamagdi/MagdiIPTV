@@ -13,7 +13,7 @@ public final class PlayerView extends FrameLayout {
  private final WebView web;
  private final boolean phone;
  private final String surface;
- private boolean closed,active,background=true,pendingResume,interrupted,documentReady;
+ private boolean closed,active,covered,background=true,pendingResume,interrupted,documentReady;
  private long lastTelemetry,lastBack,detachedSince;
  private boolean sampleInFlight;
  private long sampleGeneration,sampleStarted;
@@ -149,16 +149,26 @@ public final class PlayerView extends FrameLayout {
    });
   }timer.postDelayed(this,2000);
  }};
- void resume(){if(closed)return;background=getContext().getSharedPreferences("iptv",0).getBoolean("backgroundAudio",true);active=true;controllerChanged();web.onResume();if(!phone){CarController.attach(this);timer.removeCallbacks(sample);timer.post(sample);}schedulePicture();timer.postDelayed(()->tryResume(),500);Diagnostics.event(surface+" resumed");}
- void pause(){if(closed)return;active=false;controllerChanged();timer.removeCallbacks(repaint);timer.removeCallbacks(sample);if(!phone){CarController.detach(this);pendingResume=false;}web.onPause();Diagnostics.event(surface+" covered; controller="+phone);}
+ // A covered screen keeps the local document, its request and status polling.
+ void coverHost(){
+  if(phone||closed)return;
+  if(!CarPlaybackSession.connected()){pause();return;}
+  if(!active||covered)return;
+  covered=true;timer.removeCallbacks(repaint);
+  background=getContext().getSharedPreferences("iptv",0).getBoolean("backgroundAudio",true);
+  if(background)cover();else {pauseMedia();web.onPause();}
+  Diagnostics.event("Car view covered; connected session retained; background audio="+background);
+ }
+ void resume(){if(closed)return;background=getContext().getSharedPreferences("iptv",0).getBoolean("backgroundAudio",true);active=true;covered=false;controllerChanged();web.onResume();if(!phone){CarController.attach(this);timer.removeCallbacks(sample);timer.post(sample);}schedulePicture();timer.postDelayed(()->tryResume(),500);Diagnostics.event(surface+" resumed");}
+ void pause(){if(closed)return;active=false;covered=false;controllerChanged();timer.removeCallbacks(repaint);timer.removeCallbacks(sample);if(!phone){CarController.detach(this);pendingResume=false;}web.onPause();Diagnostics.event(phone?"phone covered; controller=true":"Car player unavailable; playback stopped");}
  private void cover(){if(phone||web==null||closed||!active||!background)return;pendingResume=true;final long e=CarController.epoch(),r=CarController.request(),g=sampleGeneration;web.evaluateJavascript("window.__magdiPlayback?window.__magdiPlayback.cover():false",v->{if(!closed&&active&&g==sampleGeneration&&CarController.accepts(this,e,r))pendingResume="true".equals(v);});}
  private void tryResume(){if(phone||closed||!CarController.accepts(this)||!background||!pendingResume)return;android.media.AudioManager a=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);if(a.getMode()!=android.media.AudioManager.MODE_NORMAL||a.isMusicActive())return;pendingResume=false;guardedPlayerScript("window.__magdiPlayback&&window.__magdiPlayback.resume()");}
  private void guardedPlayerScript(String script){web.evaluateJavascript("if(window.Controller&&Controller.matches("+CarController.epoch()+","+CarController.request()+")){"+script+"}",null);}
  void pauseMedia(){if(phone)return;pendingResume=false;guardedPlayerScript("if(window.__magdiPlayback)window.__magdiPlayback.stop();if(window.app)window.app.pause()");MediaCardService.paused(this);PlaybackService.release(this);}
  void playFromMediaCard(){if(phone||closed||!CarController.accepts(this))return;android.media.AudioManager a=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);if(a.getMode()!=android.media.AudioManager.MODE_NORMAL)return;web.onResume();guardedPlayerScript("window.app&&window.app.resume()");}
  boolean isCarView(){return !phone;}
- private void schedulePicture(){if(!active||closed)return;timer.removeCallbacks(repaint);timer.post(repaint);timer.postDelayed(repaint,250);timer.postDelayed(repaint,900);}
- private void refreshPicture(){if(closed||!active||!isAttachedToWindow()||!isShown())return;web.onResume();web.requestLayout();web.postInvalidateOnAnimation();if(fullscreen!=null)fullscreen.postInvalidateOnAnimation();web.evaluateJavascript("window.dispatchEvent(new Event('resize'))",null);web.postVisualStateCallback(android.os.SystemClock.uptimeMillis(),new WebView.VisualStateCallback(){public void onComplete(long id){if(!closed&&active)web.postInvalidateOnAnimation();}});}
+ private void schedulePicture(){if(!active||closed||covered)return;timer.removeCallbacks(repaint);timer.post(repaint);timer.postDelayed(repaint,250);timer.postDelayed(repaint,900);}
+ private void refreshPicture(){if(closed||!active||covered||!isAttachedToWindow()||!isShown())return;web.onResume();web.requestLayout();web.postInvalidateOnAnimation();if(fullscreen!=null)fullscreen.postInvalidateOnAnimation();web.evaluateJavascript("window.dispatchEvent(new Event('resize'))",null);web.postVisualStateCallback(android.os.SystemClock.uptimeMillis(),new WebView.VisualStateCallback(){public void onComplete(long id){if(!closed&&active&&!covered)web.postInvalidateOnAnimation();}});}
  @Override public void onWindowFocusChanged(boolean focus){if(!focus&&web!=null&&background)cover();super.onWindowFocusChanged(focus);if(focus&&web!=null){schedulePicture();timer.postDelayed(()->tryResume(),300);}}
  private void showFullscreen(View v,WebChromeClient.CustomViewCallback cb){
   if(fullscreen!=null){cb.onCustomViewHidden();return;}web.evaluateJavascript("window.app&&window.app.fullscreen(false)",null);fullscreenCallback=cb;

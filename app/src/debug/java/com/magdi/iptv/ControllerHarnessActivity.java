@@ -4,7 +4,7 @@ package com.magdi.iptv;
 public final class ControllerHarnessActivity extends android.app.Activity {
  private android.widget.Button toggle;private PlayerView phone,car;private boolean connected=true;
  public void onCreate(android.os.Bundle state){super.onCreate(state);
-  android.widget.LinearLayout root=new android.widget.LinearLayout(this);root.setOrientation(1);
+  android.widget.LinearLayout root=new android.widget.LinearLayout(this);root.setOrientation(android.widget.LinearLayout.VERTICAL);
   toggle=new android.widget.Button(this);toggle.setText("Disconnect test car");root.addView(toggle);
   android.widget.LinearLayout panels=new android.widget.LinearLayout(this);root.addView(panels,new android.widget.LinearLayout.LayoutParams(-1,0,1));
   phone=new PlayerView(this);car=new PlayerView(new android.view.ContextThemeWrapper(this,android.R.style.Theme_Material_NoActionBar));
