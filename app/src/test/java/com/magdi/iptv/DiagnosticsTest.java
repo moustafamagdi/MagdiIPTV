@@ -57,7 +57,7 @@ public class DiagnosticsTest {
  }
  @Test public void manualSessionLeavesCarPlayerAndMediaTargetUntouched()throws Exception{
   PlayerView car=new PlayerView(new ContextThemeWrapper(activity,android.R.style.Theme_Material_NoActionBar));
-  try{car.resume();MediaCardService.select(car);drain();java.lang.reflect.Field field=PlayerView.class.getDeclaredField("web");field.setAccessible(true);android.webkit.WebView web=(android.webkit.WebView)field.get(car);String before=shadowOf(web).getLastEvaluatedJavascript();
+  try{car.resume();CarController.pageReady(car);MediaCardService.select(car);drain();java.lang.reflect.Field field=PlayerView.class.getDeclaredField("web");field.setAccessible(true);android.webkit.WebView web=(android.webkit.WebView)field.get(car);String before=shadowOf(web).getLastEvaluatedJavascript();
    Diagnostics.newSession(activity,ok->assertTrue(ok));drain();assertSame(car,MediaCardService.target());assertEquals(before,shadowOf(web).getLastEvaluatedJavascript());assertFalse(shadowOf(web).wasOnPauseCalled());
   }finally{car.close();}
  }

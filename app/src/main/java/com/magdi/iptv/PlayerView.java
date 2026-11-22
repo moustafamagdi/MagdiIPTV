@@ -26,6 +26,7 @@ public final class PlayerView extends FrameLayout {
  private final Portal portal;
  private static final Set<PlayerView> views=Collections.newSetFromMap(new WeakHashMap<>());
  private final Runnable repaint=()->refreshPicture();
+ private final Runnable expireMediaCard=()->{if(!closed&&!CarController.fresh()){MediaCardService.forget(this);PlaybackService.release(this);}};
  private FrameLayout fullscreen;
  private WebChromeClient.CustomViewCallback fullscreenCallback;
  @SuppressLint({"SetJavaScriptEnabled","AddJavascriptInterface"}) public PlayerView(Context c){
@@ -131,6 +132,7 @@ public final class PlayerView extends FrameLayout {
  private void observation(String reason){if(reason.equals(observationReason))return;observationReason=reason;Diagnostics.event("Controller observation="+reason);}
  private void observe(JSONObject state){
   String reason=CarController.report(this,state);observation(reason);if(!"accepted".equals(reason))return;
+  timer.removeCallbacks(expireMediaCard);timer.postDelayed(expireMediaCard,6500);
   boolean playing=state.optBoolean("playing");if(!state.optBoolean("wanted"))pendingResume=false;
   MediaCardService.observe(this,playing,state.optBoolean("muted"),state.optInt("ready")>0&&!state.optBoolean("error"),state.optLong("time")*1000);
   if(playing&&background)PlaybackService.keep(this);else if(!pendingResume&&!interrupted)PlaybackService.idle(this);

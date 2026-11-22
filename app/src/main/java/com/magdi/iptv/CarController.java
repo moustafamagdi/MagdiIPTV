@@ -18,9 +18,10 @@ final class CarController {
  static void pageReady(PlayerView view){if(target==view){ready=true;revision++;view.carConnection(epoch,request);}}
  static void documentLoading(PlayerView view){if(target==view){detach(view);attach(view);}}
  static boolean accepts(PlayerView view){return target==view&&ready;}
+ static boolean fresh(){return lastReport!=0&&android.os.SystemClock.elapsedRealtime()-lastReport<6500;}
  static boolean accepts(PlayerView view,long e,long r){return accepts(view)&&e==epoch&&r==request;}
  private static JSONObject item(JSONObject value)throws JSONException {return value==null?null:new JSONObject().put("id",value.optString("id")).put("type",value.optString("type")).put("name",value.optString("name").substring(0,Math.min(500,value.optString("name").length())));}
- private static void reset(JSONObject next){request++;revision++;lastSequence=0;lastReport=0;selection=next;playback=new JSONObject();try{playback.put("phase",next==null?"idle":"loading").put("item",next);}catch(JSONException ignored){}if(target!=null)target.controllerChanged();}
+ private static void reset(JSONObject next){request++;revision++;lastSequence=0;lastReport=0;selection=next;playback=new JSONObject();try{playback.put("phase",next==null?"idle":"loading").put("item",next);}catch(JSONException ignored){}if(target!=null){target.controllerChanged();MediaCardService.forget(target);}}
  static void detach(PlayerView view){
   if(target!=view)return;target=null;ready=false;epoch++;reset(null);view.carConnection(0,request);
   MediaCardService.forget(view);PlaybackService.release(view);Diagnostics.event("Controller disconnected; pending requests cancelled");
