@@ -1,3 +1,5 @@
+> Historical rollout validation. Current defaults and disclosure behavior are documented in [SUPPORT.md](../SUPPORT.md).
+
 ## What changed
 
 The phone now has Support & diagnostics: copy a random installation Support ID, send a technical report with consent, or opt into periodic automatic reports. No session or file-part selection is needed for normal reporting. Privacy details, deletion/reset, simple manual sharing and advanced local sessions remain available.
