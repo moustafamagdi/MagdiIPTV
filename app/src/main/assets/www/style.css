@@ -90,3 +90,4 @@ html:has(dialog[open]),html:has(dialog[open]) body{overflow:hidden;overscroll-be
 .restart-start{position:absolute;z-index:4;top:48%;left:50%;transform:translate(-50%,-50%);max-width:90%}
 
 #log-sessions{width:100%;margin:10px 0}.settings-advanced{margin:12px 0}.settings-advanced>summary{min-height:48px;display:list-item;padding:12px 6px;font-size:16px;color:var(--text);cursor:pointer}
+.picture-fit-row{display:flex;justify-content:flex-end}.picture-fit-row button{min-height:44px;padding:5px 12px;font-size:13px;background:#101b28cc}

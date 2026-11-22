@@ -31,6 +31,12 @@ public class CarControllerTest {
  private JSONObject report()throws Exception{return new JSONObject().put("epoch",CarController.epoch()).put("request",CarController.request()).put("sequence",1).put("phase","playing").put("ready",4).put("canPause",true).put("item",command().getJSONObject("item"));}
  private JSONObject action(String action)throws Exception{return new JSONObject().put("action",action).put("epoch",CarController.epoch()).put("request",CarController.request());}
  private void selected()throws Exception{CarController.attach(car);CarController.pageReady(car);assertTrue(CarController.command(command()));}
+ @Test public void fillRequiresObservedFullscreenBooleanAndCurrentRequest()throws Exception{
+  selected();assertFalse(CarController.command(action("fill").put("fill",true)));
+  CarController.report(car,report().put("canFill",true));assertFalse(CarController.command(action("fill").put("fill","true")));
+  assertTrue(CarController.command(action("fill").put("fill",true)));assertTrue(shadowOf(web(car)).getLastEvaluatedJavascript().contains("\"fill\":true"));
+  JSONObject old=action("fill").put("fill",false);CarController.command(action("stop"));assertFalse(CarController.command(old));CarController.detach(car);assertFalse(CarController.command(action("fill").put("fill",true)));
+ }
  @Test public void lateReportFromOldSessionCannotRestorePlayback()throws Exception{selected();JSONObject old=report();assertEquals("accepted",CarController.report(car,old));CarController.detach(car);assertEquals("stale-request",CarController.report(car,old));CarController.attach(car);CarController.pageReady(car);assertEquals("stale-request",CarController.report(car,old));assertEquals("idle",CarController.status().getJSONObject("playback").getString("phase"));}
  @Test public void rapidABASelectionsRejectOldReportEvenWithSameItem()throws Exception{selected();JSONObject old=report();CarController.command(command().put("item",new JSONObject().put("id","2").put("type","live")));CarController.command(command());assertEquals("stale-request",CarController.report(car,old));assertEquals("accepted",CarController.report(car,report()));}
  @Test public void stopRejectsLateReportAndOldMediaRegistration()throws Exception{selected();JSONObject old=report();assertTrue(CarController.command(action("stop")));assertEquals("stale-request",CarController.report(car,old));try{CarController.begin(car,old);fail();}catch(IllegalStateException expected){}assertEquals("idle",CarController.status().getJSONObject("playback").getString("phase"));}

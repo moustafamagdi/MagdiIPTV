@@ -37,11 +37,12 @@ final class CarController {
  static boolean command(JSONObject packet)throws JSONException {
   if(target==null||!ready||packet.optLong("epoch",-1)!=epoch)return false;
   String action=packet.optString("action");
-  if(!java.util.Arrays.asList("select","pause","resume","stop","next","previous","seek","seekBy","mute","fullscreen","retry","restart").contains(action)||packet.toString().length()>100000)return false;
+  if(!java.util.Arrays.asList("select","pause","resume","stop","next","previous","seek","seekBy","mute","fullscreen","fill","retry","restart").contains(action)||packet.toString().length()>100000)return false;
   if(!action.equals("select")&&!action.equals("stop")&&packet.optLong("request",-1)!=request)return false;
   boolean fresh=lastReport!=0&&android.os.SystemClock.elapsedRealtime()-lastReport<6500;
-  String capability=action.equals("resume")?"canPlay":action.equals("pause")?"canPause":(action.equals("seek")||action.equals("seekBy"))?"seekable":action.equals("fullscreen")?"canFullscreen":action;
-  if(java.util.Arrays.asList("resume","pause","seek","seekBy","next","previous","fullscreen","mute").contains(action)&&(!fresh||!playback.optBoolean(capability)))return false;
+  String capability=action.equals("resume")?"canPlay":action.equals("pause")?"canPause":(action.equals("seek")||action.equals("seekBy"))?"seekable":action.equals("fullscreen")?"canFullscreen":action.equals("fill")?"canFill":action;
+  if(java.util.Arrays.asList("resume","pause","seek","seekBy","next","previous","fullscreen","fill","mute").contains(action)&&(!fresh||!playback.optBoolean(capability)))return false;
+  if(action.equals("fill")&&!(packet.opt("fill") instanceof Boolean))return false;
   if(action.equals("seek")&&!Double.isFinite(packet.optDouble("percent",Double.NaN)))return false;
   if(action.equals("seekBy")&&argsSecondsInvalid(packet))return false;
   if(action.equals("retry")&&selection==null)return false;
