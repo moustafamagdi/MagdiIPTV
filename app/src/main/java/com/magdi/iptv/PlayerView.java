@@ -12,6 +12,7 @@ import java.util.*;
 public final class PlayerView extends FrameLayout {
  private final WebView web;
  private final boolean phone;
+ private final CarLaunchRequest carLaunch;
  private final String surface;
  private boolean closed,active,covered,background=true,pendingResume,interrupted,documentReady;
  private long lastTelemetry,lastBack,detachedSince;
@@ -31,6 +32,7 @@ public final class PlayerView extends FrameLayout {
  private WebChromeClient.CustomViewCallback fullscreenCallback;
  @SuppressLint({"SetJavaScriptEnabled","AddJavascriptInterface"}) public PlayerView(Context c){
   super(c);phone=c instanceof android.app.Activity;surface=phone?"phone":"car";
+  carLaunch=phone?new CarLaunchRequest(c,IptvCarService.class,()->{}):null;
   background=c.getSharedPreferences("iptv",0).getBoolean("backgroundAudio",true);
   setBackgroundColor(0xff091622);portal=new Portal(c,proxy);views.add(this);
   web=new WebView(c){@Override protected void onWindowVisibilityChanged(int visibility){
@@ -75,7 +77,7 @@ public final class PlayerView extends FrameLayout {
  private final class Bridge {
   @JavascriptInterface public void request(String id,String method,String payload){
    if(closed||id==null||!id.matches("[0-9]{1,12}"))return;
-   if(Arrays.asList("controllerstate","controllercommand","ready","playerbegin","carstop","play","publicplay").contains(method)){
+   if(Arrays.asList("controlleropen","controllerstate","controllercommand","ready","playerbegin","carstop","play","publicplay").contains(method)){
     timer.post(()->{
      if(closed)return;
      try{
@@ -83,8 +85,9 @@ public final class PlayerView extends FrameLayout {
       if("ready".equals(method)){documentReady=true;if(!phone)CarController.pageReady(PlayerView.this);value=true;}
       else if("playerbegin".equals(method)){if(phone)throw new IllegalStateException();value=CarController.begin(PlayerView.this,args);}
       else if("carstop".equals(method)){if(phone||!CarController.accepts(PlayerView.this))throw new IllegalStateException();value=CarController.command(args.put("action","stop"));}
-      else if("controllerstate".equals(method))value=CarController.status();
-      else if("controllercommand".equals(method))value=phone&&CarController.command(args);
+      else if("controlleropen".equals(method)){if(!phone||!active)throw new IllegalStateException();carLaunch.request();value=carLaunch.status();}
+      else if("controllerstate".equals(method))value=CarController.status().put("launch",phone?carLaunch.status():"idle");
+      else if("controllercommand".equals(method)){if(phone&&"stop".equals(args.optString("action")))carLaunch.cancel();value=phone&&CarController.command(args);}
       else {
        if(phone||!CarController.accepts(PlayerView.this,args.optLong("epoch",-1),args.optLong("request",-1)))throw new IllegalStateException("Car player unavailable");
        value=portal.call(method,args);MediaCardService.select(PlayerView.this);
@@ -162,7 +165,7 @@ public final class PlayerView extends FrameLayout {
   Diagnostics.event("Car view covered; connected session retained; background audio="+background);
  }
  void resume(){if(closed)return;background=getContext().getSharedPreferences("iptv",0).getBoolean("backgroundAudio",true);active=true;covered=false;controllerChanged();web.onResume();if(!phone){CarController.attach(this);timer.removeCallbacks(sample);timer.post(sample);}schedulePicture();timer.postDelayed(()->tryResume(),500);Diagnostics.event(surface+" resumed");}
- void pause(){if(closed)return;active=false;covered=false;controllerChanged();timer.removeCallbacks(repaint);timer.removeCallbacks(sample);if(!phone){CarController.detach(this);pendingResume=false;}web.onPause();Diagnostics.event(phone?"phone covered; controller=true":"Car player unavailable; playback stopped");}
+ void pause(){if(closed)return;if(phone)carLaunch.cancel();active=false;covered=false;controllerChanged();timer.removeCallbacks(repaint);timer.removeCallbacks(sample);if(!phone){CarController.detach(this);pendingResume=false;}web.onPause();Diagnostics.event(phone?"phone covered; controller=true":"Car player unavailable; playback stopped");}
  private void cover(){if(phone||web==null||closed||!active||!background)return;pendingResume=true;final long e=CarController.epoch(),r=CarController.request(),g=sampleGeneration;web.evaluateJavascript("window.__magdiPlayback?window.__magdiPlayback.cover():false",v->{if(!closed&&active&&g==sampleGeneration&&CarController.accepts(this,e,r))pendingResume="true".equals(v);});}
  private void tryResume(){if(phone||closed||!CarController.accepts(this)||!background||!pendingResume)return;android.media.AudioManager a=(android.media.AudioManager)getContext().getSystemService(Context.AUDIO_SERVICE);if(a.getMode()!=android.media.AudioManager.MODE_NORMAL||a.isMusicActive())return;pendingResume=false;guardedPlayerScript("window.__magdiPlayback&&window.__magdiPlayback.resume()");}
  private void guardedPlayerScript(String script){web.evaluateJavascript("if(window.Controller&&Controller.matches("+CarController.epoch()+","+CarController.request()+")){"+script+"}",null);}
@@ -181,5 +184,5 @@ public final class PlayerView extends FrameLayout {
  private void hideFullscreen(){if(fullscreen==null)return;FrameLayout old=fullscreen;fullscreen=null;removeView(old);old.removeAllViews();web.setVisibility(VISIBLE);WebChromeClient.CustomViewCallback cb=fullscreenCallback;fullscreenCallback=null;if(cb!=null)cb.onCustomViewHidden();schedulePicture();}
  boolean handleBack(){if(fullscreen!=null){hideFullscreen();return true;}long now=android.os.SystemClock.elapsedRealtime();if(now-lastBack<1500)return false;lastBack=now;web.evaluateJavascript("window.app&&window.app.back()",null);return true;}
  void prepareDetach(){pause();hideFullscreen();}
- void close(){if(closed)return;if(!phone)CarController.detach(this);closed=true;active=false;timer.removeCallbacksAndMessages(null);requests.shutdownNow();controls.shutdownNow();views.remove(this);MediaCardService.forget(this);PlaybackService.release(this);hideFullscreen();proxy.clear();artwork.clear();removeView(web);web.removeJavascriptInterface("Android");web.destroy();Diagnostics.event(surface+" destroyed");}
+ void close(){if(closed)return;if(phone)carLaunch.cancel();if(!phone)CarController.detach(this);closed=true;active=false;timer.removeCallbacksAndMessages(null);requests.shutdownNow();controls.shutdownNow();views.remove(this);MediaCardService.forget(this);PlaybackService.release(this);hideFullscreen();proxy.clear();artwork.clear();removeView(web);web.removeJavascriptInterface("Android");web.destroy();Diagnostics.event(surface+" destroyed");}
 }

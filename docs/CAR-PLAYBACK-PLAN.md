@@ -13,7 +13,7 @@ saved accounts, support reporting and phone-controller-only operation.
 2. **Automatic media controls (implemented in the second increment).** Review both apps' media-card/service lifecycle;
    initialize controls with playback without a second player or audio-focus owner.
    Validate controls after changing to Maps/home and returning.
-3. **Phone-requested car launch feasibility.** Investigate the actual projection
+3. **Phone-requested car launch (best-effort implementation; physical validation pending).** Investigate the actual projection
    host APIs; do not assume Car App Library or Maps behavior applies. Test any
    supported launch path with bounded requests, no phone playback, no reconnection
    autoplay, and a clear fallback when the car host refuses launch.
@@ -101,3 +101,7 @@ with a physical Android Auto host. Run the physical-car acceptance checks above,
 without first opening the Audio icon. Both launcher entries remain. Phone-requested
 car UI launch is still step 3; this release does not implement it. Upgrade in place
 using the existing package and signing certificate; no account is bundled.
+
+## Third increment: 0.1.25-car-launch / Tube 0.1.41-car-launch
+
+The bounded legacy SDK UI request, user-facing fallback and no-selection-queue policy are implemented. See [CAR-LAUNCH.md](CAR-LAUNCH.md) for API evidence, safeguards, validation limits and physical-car acceptance steps. This does not promise cold launch on every Android Auto version.
