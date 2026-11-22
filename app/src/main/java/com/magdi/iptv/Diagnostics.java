@@ -18,11 +18,11 @@ public final class Diagnostics extends Application {
  private static boolean migrationPending;
  private static final ExecutorService io=Executors.newSingleThreadExecutor(r->new Thread(()->{android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);r.run();},"IPTVDiagnostics"));
  private static final SimpleDateFormat timestamp=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS",Locale.US);
- public void onCreate(){super.onCreate();app=this;io.execute(()->{
+ public void onCreate(){super.onCreate();app=this;SupportReporter.init(this);io.execute(()->{
   try{store=new DiagnosticStore(getFilesDir());connections=new DiagnosticConnections();migrate();store.start("App",System.currentTimeMillis());}
   catch(IOException e){android.util.Log.e("MagdiIPTV","Unable to initialize diagnostic sessions");}
  });event("Process started; version="+version(getPackageName()));InstallSetup.observe(this,"process start");}
- static void event(String message){final long when=System.currentTimeMillis();io.execute(()->{
+ static void event(String message){final long when=System.currentTimeMillis();SupportReporter.record(message,when);io.execute(()->{
   String safe=DiagnosticPrivacy.clean(message);android.util.Log.i("MagdiIPTV",safe);
   try{if(store!=null)store.append(timestamp.format(new Date(when))+" "+safe+"\n",when);}catch(IOException e){android.util.Log.e("MagdiIPTV","Unable to append diagnostic event");}
  });}
@@ -31,7 +31,7 @@ public final class Diagnostics extends Application {
  static void carDisconnected(){final long elapsed=android.os.SystemClock.elapsedRealtime();io.execute(()->{if(connections!=null)connections.disconnected(elapsed);});}
  private static void migrate(){try{store.migrateLegacy(app.getFilesDir(),System.currentTimeMillis());migrationPending=false;}catch(IOException e){migrationPending=true;android.util.Log.e("MagdiIPTV","Legacy logs retained; migration will be retried");}}
  static String version(String pkg){try{return app.getPackageManager().getPackageInfo(pkg,0).versionName;}catch(Exception e){return "unavailable";}}
- static void open(Activity activity,boolean ar){activity.startActivity(new Intent(activity,DiagnosticsActivity.class).putExtra("language",ar?"ar":"en"));}
+ static void open(Activity activity,boolean ar){activity.startActivity(new Intent(activity,SupportActivity.class).putExtra("language",ar?"ar":"en"));}
  static final class Part {
   final String name,session;final long bytes;final boolean current;
   Part(File file,String currentName){name=file.getName();session=name.substring(0,name.lastIndexOf("-part"));bytes=file.length();current=name.equals(currentName);}

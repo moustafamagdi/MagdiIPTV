@@ -99,3 +99,7 @@ Fullscreen controls automatically hide after 10 seconds without interaction whil
 Use the 180-second fixture described in `tests/media/README.md` with `scripts/seek-fixture.mjs` on port 8794 for the auto-hide timer tests.
 
 If resuming a saved film/episode position fails, Retry attempts that position again. Start from beginning appears on the phone and car (including fullscreen); only that explicit action clears the selected title's saved position. Automatic failure does not erase it or silently restart the film. Seek-start diagnostic code 1 identifies saved-position resume, 2 an app seek control, and 0 a native video seek. Nonzero HTTP Range diagnostics contain only sequential request numbers, status, timings, byte counts and fixed outcomes; no URLs, headers, body contents or exception messages are logged. This improves diagnosis and provides a way out of failed resume; it does not establish why a particular provider cannot deliver the saved position. Run `tests/resume-failure-native.mjs` against the long synthetic seek fixture.
+
+## Simple support reports
+
+The phone now opens **Support & diagnostics** with an installation Support ID, consent-based automatic reports, Send report now, deletion, and simple manual sharing. Previous complete local sessions remain under Advanced during rollout. See [support and privacy](SUPPORT.md).
