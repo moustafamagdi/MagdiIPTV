@@ -139,6 +139,7 @@ public final class PlayerView extends FrameLayout {
  void accountChanged(long request){controllerChanged();if(!closed)web.evaluateJavascript("window.Controller&&Controller.accountChanged("+request+")",null);}
  void controllerCommand(JSONObject command){if(closed)return;if(fullscreen!=null&&"fullscreen".equals(command.optString("action"))){hideFullscreen();return;}if("stop".equals(command.optString("action")))hideFullscreen();web.evaluateJavascript("window.Controller&&Controller.receive("+command+")",null);}
  private static String safeError(Exception e){
+  if(e instanceof ProviderConnectionFailure)return e.getMessage();
   if(e instanceof IllegalArgumentException)return "Check the server address and required fields.";
   if(e instanceof JSONException)return "Unexpected server response. Check the address, account and network.";
   if(e instanceof java.io.IOException){String m=e.getMessage();if(Portal.HTTP_RETRY.equals(m))return m;if(m!=null&&(m.startsWith("Provider returned")||m.startsWith("Login rejected")||m.startsWith("Subscription")))return m;return "Cannot reach the IPTV server. Check your network or try again.";}

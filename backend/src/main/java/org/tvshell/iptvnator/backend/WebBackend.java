@@ -213,7 +213,19 @@ public class WebBackend {
                 : fetcher.get(requestUrl, headers, TIMEOUT_XTREAM_MS);
             Map<String, Object> out = Json.object();
             out.put("action", action);
-            out.put("payload", payloadOf(result.body));
+            Object payload = payloadOf(result.body);
+            if (connectionTest && payload instanceof String) {
+                String type = result.contentType == null ? "" : result.contentType.toLowerCase(java.util.Locale.ROOT);
+                String body = result.body.trim();
+                int code = type.contains("text/html") || body.startsWith("<") ? 7 : 8;
+                out.put("connectionFailure", Json.object());
+                @SuppressWarnings("unchecked")
+                Map<String,Object> failure = (Map<String,Object>) out.get("connectionFailure");
+                failure.put("kind", "response");
+                failure.put("status", code);
+                return json(200, out);
+            }
+            out.put("payload", payload);
             return json(200, out);
         } catch (ProviderException e) {
             if (connectionTest) {
@@ -276,6 +288,11 @@ public class WebBackend {
         String code = e.code == null ? "" : e.code;
         if (code.isEmpty()) {
             failure.put("kind", "unknown");
+            failure.put("canTryHttp", Boolean.FALSE);
+            return failure;
+        }
+        if (code.equals("ERR_PROVIDER_CHALLENGE") || code.contains("REDIRECT")) {
+            failure.put("kind", code.equals("ERR_PROVIDER_CHALLENGE") ? "challenge" : "redirect");
             failure.put("canTryHttp", Boolean.FALSE);
             return failure;
         }

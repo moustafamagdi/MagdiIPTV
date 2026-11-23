@@ -8,7 +8,7 @@ final class SupportPolicy {
   JSONObject o=new JSONObject().put("at",at);Matcher m=Pattern.compile("^(car|phone) media=("+MEDIA+") time=(\\d+) ready=(\\d+) frames=(\\d+) engine=(native|hls|ts|unknown) code=(-?\\d+)$").matcher(s);
   if(m.matches())return o.put("kind","media").put("state",m.group(2)).put("time",bounded(m.group(3))).put("ready",bounded(m.group(4))).put("frames",bounded(m.group(5))).put("code",bounded(m.group(7)));
   if(s.startsWith("Playback source=car ")){int start=s.indexOf('{');if(start<0)return null;JSONObject j=new JSONObject(s.substring(start));o.put("kind","media").put("state",j.optBoolean("playing")?"playing":"pause");for(String k:new String[]{"time","ready","sampleDelayMs","callbackMs","appJavaHeapMiB"})if(j.has(k))o.put(k,bounded(j.optString(k)));JSONObject p=j.optJSONObject("performance");if(p!=null){o.put("frames",bounded(p.optString("totalFrames")));o.put("dropped",bounded(p.optString("droppedFrames")));}return o;}
-  m=Pattern.compile("^IPTV provider connect failed=([0-5])$").matcher(s);
+  m=Pattern.compile("^IPTV provider connect failed=([0-9]|10|[1-5][0-9]{2})$").matcher(s);
   if(m.matches())return o.put("kind","provider-connect").put("state","failed").put("code",Integer.parseInt(m.group(1)));
   if(s.startsWith("Process started; version="))return o.put("kind","app-start");
   if(s.equalsIgnoreCase("Car view created")||s.equals("Car playback session created"))return o.put("kind","car-open");

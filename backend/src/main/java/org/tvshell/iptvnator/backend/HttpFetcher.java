@@ -203,6 +203,9 @@ public class HttpFetcher {
                 } catch (IOException e) {
                     throw mapNetworkError(e);
                 }
+                if ("challenge".equalsIgnoreCase(connection.getHeaderField("cf-mitigated"))) {
+                    throw new ProviderException("Provider protection challenge", "ERR_PROVIDER_CHALLENGE");
+                }
                 if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
                     String location = connection.getHeaderField("Location");
                     if (location == null || location.isEmpty()) {

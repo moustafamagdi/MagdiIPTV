@@ -41,8 +41,10 @@ final class Portal {
  private Object xtream(JSONObject a,String action,JSONObject args) throws Exception {
   Map<String,List<String>> query=new LinkedHashMap<>();query.put("targetId",Collections.singletonList(target(xtreamHost(a.getString("host")))));query.put("username",Collections.singletonList(a.getString("username")));query.put("password",Collections.singletonList(a.getString("password")));
   if(!action.isEmpty())query.put("action",Collections.singletonList(action));
+  else query.put("connectionTest",Collections.singletonList("true"));
   for(String k:new String[]{"category_id","vod_id","series_id","stream_id","limit"})if(args.has(k))query.put(k,Collections.singletonList(args.getString(k)));
   JSONObject result=new JSONObject(backend.handle("GET","/xtream",query,null).bodyText());
+  if(result.has("connectionFailure"))throw ProviderConnectionFailure.from(result.getJSONObject("connectionFailure"));
   if(result.has("error"))throw new java.io.IOException("Provider request failed");
   Object payload=result.opt("payload");if(!(payload instanceof JSONObject)&&!(payload instanceof JSONArray))throw new java.io.IOException("Provider returned a web page instead of IPTV data. Check the address or network.");
   return payload;
@@ -112,6 +114,7 @@ final class Portal {
    payload=xtream(candidate,"",new JSONObject());
   } catch(java.io.IOException failure) {
    if(approvedHttp)throw failure;
+   if(failure instanceof ProviderConnectionFailure && !((ProviderConnectionFailure)failure).retryProtocol)throw failure;
    if(secure)throw new java.io.IOException(HTTP_RETRY,failure);
    candidate=alternate(account,host,"https");
    payload=xtream(candidate,"",new JSONObject());
@@ -138,6 +141,7 @@ final class Portal {
   return new JSONObject(account.toString()).put("host",scheme+host.substring(host.indexOf(':')));
  }
  static int connectionFailure(Exception error) {
+  if(error instanceof ProviderConnectionFailure)return ((ProviderConnectionFailure)error).code;
   String message=error.getMessage();
   if(HTTP_RETRY.equals(message)&&error.getCause() instanceof Exception)return connectionFailure((Exception)error.getCause());
   if ("Provider returned a web page instead of IPTV data. Check the address or network.".equals(message)) return 1;

@@ -11,8 +11,8 @@ test('shared device proof is optional but strictly paired',()=>{const x=input();
 
 test('IPTV provider failures allow only a fixed reason code',()=>{
  const event={at:1,kind:'provider-connect',state:'failed',code:1};
- assert.deepEqual(validate({...input(),app:'iptv',events:[event]}).p_events,[event]);
- for(const e of [{...event,code:8},{...event,url:'https://private.example'},{...event,state:'ready'}]){
+ for(const code of [1,6,7,8,9,10,401,503]) assert.equal(validate({...input(),app:'iptv',events:[{...event,code}]}).p_events[0].code,code);
+ for(const e of [{...event,code:11},{...event,url:'https://private.example'},{...event,state:'ready'}]){
   assert.throws(()=>validate({...input(),app:'iptv',events:[e]}));
  }
  assert.throws(()=>validate({...input(),events:[event]}));
