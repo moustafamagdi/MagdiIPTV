@@ -40,4 +40,11 @@ public class ProxyTest {
   Thread worker=new Thread(()->{try{for(int i=0;i<2;i++){try(java.net.Socket socket=server.accept()){java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream()));String first=reader.readLine(),line;while((line=reader.readLine())!=null&&!line.isEmpty()){}byte[] body=first.contains("/video")?new byte[]{2,3,4}:"<html>Blocked</html>".getBytes();String header=first.contains("/video")?"HTTP/1.1 206 Partial Content\r\nContent-Type: video/mp4\r\nContent-Range: bytes 2-4/10\r\n":"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n";socket.getOutputStream().write((header+"Content-Length: "+body.length+"\r\nConnection: close\r\n\r\n").getBytes());socket.getOutputStream().write(body);}}}catch(Exception ignored){}});worker.setDaemon(true);worker.start();
   try{StreamProxy p=new StreamProxy();String root="http://127.0.0.1:"+server.getLocalPort();String a=p.register(root+"/video");android.webkit.WebResourceResponse r=p.open(a.substring(a.lastIndexOf('/')+1),Collections.singletonMap("Range","bytes=2-4"));assertEquals(206,r.getStatusCode());assertEquals("bytes 2-4/10",r.getResponseHeaders().get("Content-Range"));assertEquals(2,r.getData().read());r.getData().close();String b=p.register(root+"/blocked");assertEquals(502,p.open(b.substring(b.lastIndexOf('/')+1),Collections.emptyMap()).getStatusCode());}finally{server.close();worker.join(1000);}
  }
+ @Test public void xtreamSupportsProviderHostAndPortWithoutChangingExplicitHttps() {
+  assertEquals("http://provider.example:2095",Portal.xtreamHost(" provider.example:2095 "));
+  assertEquals("https://provider.example:2095",Portal.xtreamHost("https://provider.example:2095/"));
+  assertThrows(IllegalArgumentException.class,()->Portal.xtreamHost("provider.example:65536"));
+  assertThrows(IllegalArgumentException.class,()->Portal.xtreamHost("user@provider.example:2095"));
+  assertThrows(IllegalArgumentException.class,()->Portal.validHost("provider.example:2095"));
+ }
 }

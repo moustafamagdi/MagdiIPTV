@@ -18,9 +18,19 @@ final class Portal {
  Portal(Context c,StreamProxy p){store=new AccountStore(c);streams=p;}
  static String enc(String value){try{return URLEncoder.encode(value,"UTF-8").replace("+","%20");}catch(java.io.UnsupportedEncodingException e){throw new IllegalStateException(e);}}
  static String validHost(String text){URI u=URI.create(text.trim());if(!("http".equals(u.getScheme())||"https".equals(u.getScheme()))||u.getHost()==null||u.getRawUserInfo()!=null||u.getFragment()!=null)throw new IllegalArgumentException("Enter a valid HTTP or HTTPS server address");return text.trim().replaceAll("/+$","");}
+ // Providers commonly send legacy Xtream addresses as host:port.
+ static String xtreamHost(String text) {
+  String address=text.trim();
+  if(address.matches("(?i)(?:[a-z0-9.-]+|\\[[0-9a-f:]+\\]):[0-9]{1,5}/?")) {
+   URI uri=URI.create("http://"+address);
+   if(uri.getPort()<1||uri.getPort()>65535) throw new IllegalArgumentException("Enter a valid server port");
+   address=uri.toString();
+  }
+  return validHost(address);
+ }
  private String target(String url) throws Exception {WebBackend.Response r=backend.handle("POST","/provider-targets",Collections.emptyMap(),new JSONObject().put("url",url).toString());return new JSONObject(r.bodyText()).getString("targetId");}
  private Object xtream(JSONObject a,String action,JSONObject args) throws Exception {
-  Map<String,List<String>> query=new LinkedHashMap<>();query.put("targetId",Collections.singletonList(target(validHost(a.getString("host")))));query.put("username",Collections.singletonList(a.getString("username")));query.put("password",Collections.singletonList(a.getString("password")));
+  Map<String,List<String>> query=new LinkedHashMap<>();query.put("targetId",Collections.singletonList(target(xtreamHost(a.getString("host")))));query.put("username",Collections.singletonList(a.getString("username")));query.put("password",Collections.singletonList(a.getString("password")));
   if(!action.isEmpty())query.put("action",Collections.singletonList(action));
   for(String k:new String[]{"category_id","vod_id","series_id","stream_id","limit"})if(args.has(k))query.put(k,Collections.singletonList(args.getString(k)));
   JSONObject result=new JSONObject(backend.handle("GET","/xtream",query,null).bodyText());
