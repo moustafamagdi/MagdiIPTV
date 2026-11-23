@@ -82,7 +82,7 @@ window.Controller=(()=>{
   finally{if(valid())publish();}
  }
  function stopLocal(){if(phone)return command('stop');cancelPending();stop();if(epoch)api('carstop',{epoch,request},2500).catch(()=>{});}
- function accountChanged(nextRequest){if(!phone&&!publicSource){request=nextRequest;bound=true;cancelPending();source='';cache.clear();stop();}}
+ function accountChanged(nextRequest){if(!phone&&!publicSource){request=nextRequest;bound=true;cancelPending();clearSubscriptionView();api('config').then(next=>{account=next;if(!source)$('welcome-state').textContent=t(next.configured?'ready':'noAccount');}).catch(()=>{});}}
  function localSelection(){if(!phone)cancelPending();}
  function init(){
   $('controller-open').onclick=openCar;$('controller-alert-open').onclick=openCar;

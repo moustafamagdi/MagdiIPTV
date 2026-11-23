@@ -18,9 +18,59 @@ function message(text){$('playback-message').textContent=text||'';$('playback-me
 function errorText(e){return language==='ar'?t('offline')+'\n'+e.message:e.message;}
 function busy(button,value){button.disabled=value;}
 async function initialize(){applyLanguage();try{env=await api('environment');$('app-version').textContent=env.version||'';Controller.configure(env);EmbeddedKeyboard.configure(!!env.car);$('keyboard').hidden=!env.car;$('search').readOnly=!!env.car;$('background').checked=env.background;$('setup-auto').hidden=!!env.car;$('log-sessions').hidden=!!env.car;account=await api('config');$('welcome-state').textContent=t(account.configured?'ready':'noAccount');await api('ready');}catch(e){notice(errorText(e));}}
-async function openSettings(){account=await api('config');$('host').value=account.host||'';$('username').value=account.username||'';$('password').value='';$('password').placeholder=account.hasPassword?'••••••••':'';$('playlist').value=account.playlist||'';$('source-mode').value=account.mode||'xtream';sourceMode();$('form-status').textContent='';if(!$('settings-dialog').open)$('settings-dialog').showModal();}
+let addingAccount=false,accountBusy=false;
+function renderAccountForm(){
+ const picker=$('saved-accounts');
+ picker.replaceChildren();
+ (account.profiles||[]).forEach((profile,index)=>{
+  picker.add(new Option(profile.name||t('accountName')+' '+(index+1),profile.id));
+ });
+ picker.value=account.activeId||'';
+ if(!picker.options.length)picker.add(new Option(t('noSavedAccounts'),''));
+ const fields=addingAccount?{}:account;
+ $('account-name').value=fields.label||'';$('host').value=fields.host||'';$('username').value=fields.username||'';
+ $('password').value='';$('password').placeholder=fields.hasPassword?'••••••••':'';
+ $('playlist').value=fields.playlist||'';$('source-mode').value=fields.mode||'xtream';
+ $('forget').disabled=addingAccount||!account.configured;
+ updateAccountSwitch();sourceMode();
+}
+function updateAccountSwitch(){
+ $('switch-account').disabled=accountBusy||!$('saved-accounts').value||(!addingAccount&&$('saved-accounts').value===account.activeId);
+ EmbeddedSelects.refresh();
+}
+async function openSettings(){
+ if(accountBusy)return;
+ account=await api('config');addingAccount=false;renderAccountForm();$('form-status').textContent='';
+ if(!$('settings-dialog').open)$('settings-dialog').showModal();
+}
 function sourceMode(){EmbeddedSelects.refresh();const m=$('source-mode').value;$('xtream-fields').hidden=m==='m3u';$('m3u-fields').hidden=m!=='m3u';}
-async function save(connect){++connectionGeneration;const button=connect?document.querySelector('#account-form button[type=submit]'):$('save-only');busy(button,true);try{await api('save',{mode:$('source-mode').value,host:$('host').value.trim(),username:$('username').value.trim(),password:$('password').value,playlist:$('playlist').value.trim()});$('password').value='';$('form-status').textContent=t('saved');account=await api('config');cache.clear();stop();$('workspace').hidden=true;$('welcome').hidden=false;$('welcome-state').textContent=t('ready');if(connect){$('settings-dialog').close();await connectAccount();}}catch(e){$('form-status').textContent=errorText(e);}finally{busy(button,false);}}
+function clearSubscriptionView(){
+ ++connectionGeneration;++loadGeneration;++seriesGeneration;
+ stop();cache.clear();source='';publicSource='';items=[];filtered=[];categories=[];playlistItems=[];
+ seriesData=null;favorites=[];recent=[];positions={};
+ $('workspace').hidden=true;$('welcome').hidden=false;$('welcome-state').textContent=t(account.configured?'ready':'noAccount');
+ connectionBusy(false);
+}
+async function changeAccount(method,args,connect=false){
+ if(accountBusy)return;
+ accountBusy=true;
+ const submit=document.querySelector('#account-form button[type=submit]');
+ for(const button of [submit,$('save-only'),$('add-account'),$('forget'),$('switch-account')])button.disabled=true;
+ try{
+  await api(method,args);account=await api('config');addingAccount=false;clearSubscriptionView();renderAccountForm();
+  $('form-status').textContent=t(method==='forget'?'forgotten':'saved');
+  if(connect&&account.configured){$('settings-dialog').close();await connectAccount();}
+ }catch(e){$('form-status').textContent=errorText(e);}
+ finally{
+  accountBusy=false;submit.disabled=false;$('save-only').disabled=false;$('add-account').disabled=false;
+  $('forget').disabled=addingAccount||!account.configured;updateAccountSwitch();
+ }
+}
+async function save(connect){
+ await changeAccount('save',{activeId:account.activeId||'',adding:addingAccount,label:$('account-name').value,
+ mode:$('source-mode').value,host:$('host').value.trim(),username:$('username').value.trim(),
+ password:$('password').value,playlist:$('playlist').value.trim()},connect);
+}
 async function connectAccount(){if(!account.configured){await openSettings();return;}const connection=++connectionGeneration;connectionBusy(true);stop();$('workspace').hidden=true;$('welcome').hidden=false;busy($('connect'),true);notice('');$('welcome-state').textContent=t('connecting');try{const info=await api('connect');if(connection!==connectionGeneration)return;stop();publicSource='';source=info.source;mode=info.mode;favorites=readStore(source+':favorites',[]);recent=readStore(source+':recent',[]);positions=readStore(source+':positions',{});cache.clear();if(mode==='m3u'){const data=await api('playlist');if(connection!==connectionGeneration)return;if(!Array.isArray(data.playlist?.items))throw new Error('Invalid M3U response');playlistItems=data.playlist.items.map((c,i)=>({id:String(i)+':'+hash(c.url||''),type:'live',name:c.name||'Channel '+(i+1),...Metadata.fields(c),group:c.group?.title||c.group||'',url:c.url,ext:/\.m3u8(?:\?|$)/i.test(c.url||'')?'m3u8':/\.ts(?:\?|$)/i.test(c.url||'')?'ts':'mp4'}));}
  ++loadGeneration;updateSourceLabel();$('welcome').hidden=true;$('workspace').hidden=false;document.querySelectorAll('[data-tab=vod],[data-tab=series]').forEach(e=>e.hidden=mode==='m3u');await changeTab('live');
  }catch(e){if(connection===connectionGeneration){$('welcome-state').textContent=t('offline');notice(errorText(e));}}finally{if(connection===connectionGeneration)connectionBusy(false);}}
@@ -163,7 +213,15 @@ $('restart-start').onclick=restartFromBeginning;$('play-pause').onclick=()=>v.pa
 $('public-open').onclick=openPublic;$('public-switch').onclick=openPublic;$('public-close').onclick=cancelPublic;$('public-load').onclick=connectPublic;$('subscription-switch').onclick=connectAccount;
 $('settings').onclick=()=>openSettings().catch(e=>notice(errorText(e)));$('configure').onclick=$('settings').onclick;$('connect').onclick=connectAccount;$('close-settings').onclick=()=>$('settings-dialog').close();$('account-form').onsubmit=e=>{e.preventDefault();save(true);};$('save-only').onclick=()=>save(false);$('source-mode').onchange=sourceMode;
 $('background').onchange=()=>api('background',{enabled:$('background').checked}).catch(e=>notice(errorText(e)));$('setup-auto').onclick=()=>api('setup',{language});$('log-sessions').onclick=()=>api('logSessions',{language});
-$('forget').onclick=async()=>{if(!confirm(t('confirmForget')))return;stop();await api('forget');account={};cache.clear();$('settings-dialog').close();$('workspace').hidden=true;$('welcome').hidden=false;$('welcome-state').textContent=t('noAccount');notice(t('forgotten'));};
+$('saved-accounts').onchange=updateAccountSwitch;
+$('add-account').onclick=()=>{if(accountBusy)return;addingAccount=true;renderAccountForm();$('form-status').textContent=t('addingAccount');};
+$('switch-account').onclick=()=>{
+ const id=$('saved-accounts').value;
+ if(!id)return;
+ if(id===account.activeId){addingAccount=false;renderAccountForm();$('form-status').textContent='';return;}
+ void changeAccount('switchAccount',{id},true);
+};
+$('forget').onclick=()=>{if(!accountBusy&&!addingAccount&&account.configured&&confirm(t('confirmForget')))void changeAccount('forget',{activeId:account.activeId});};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>changeTab(b.dataset.tab));$('category').onchange=()=>mode==='m3u'?filter():loadItems();$('search').oninput=filter;$('more').onclick=()=>{shown+=60;render();};$('refresh').onclick=()=>{if(publicSource){openPublic();connectPublic();return;}cache.clear();changeTab(tab);};$('close-episodes').onclick=()=>$('episodes-dialog').close();$('season').onchange=renderEpisodes;
 $('public-dialog').addEventListener('cancel',e=>{e.preventDefault();cancelPublic();});
 $('episodes-dialog').addEventListener('close',()=>{if(!$('episodes-dialog').open){++seriesGeneration;seriesLoading=false;openingSeriesKey='';updateCards();}});

@@ -44,16 +44,12 @@ final class Portal {
    String url=publicLists.selected(args.getString("preset"),args.getString("url"));
    streams.clear();return streams.register(url);
   }
-  JSONObject a=store.read();
+  if (Arrays.asList("config","save","forget","switchAccount").contains(method)) {
+   synchronized (AccountStore.class) { return accountRequest(method,args); }
+  }
+  JSONObject a;
+  synchronized (AccountStore.class) { a=new AccountProfiles(store.read()).current(); }
   switch(method){
-   case "config":return new JSONObject().put("configured",a.length()>0).put("host",a.optString("host")).put("username",a.optString("username")).put("mode",a.optString("mode","xtream")).put("playlist",a.optString("playlist")).put("hasPassword",!a.optString("password").isEmpty());
-   case "save": {
-    String mode=args.optString("mode","xtream");JSONObject next=new JSONObject().put("mode",mode);
-    if("m3u".equals(mode)){next.put("playlist",validHost(args.getString("playlist")));}
-    else {next.put("host",validHost(args.getString("host"))).put("username",args.getString("username").trim());String password=args.optString("password");if(password.isEmpty()&&a.optString("host").equals(next.getString("host"))&&a.optString("username").equals(next.getString("username")))password=a.optString("password");if(password.isEmpty()||next.getString("username").isEmpty())throw new IllegalArgumentException("Username and password are required");next.put("password",password);}
-    store.save(next);return true;
-   }
-   case "forget":store.clear();streams.clear();return true;
    case "connect": {
     if("m3u".equals(a.optString("mode")))return new JSONObject().put("status","M3U").put("mode","m3u").put("source",sourceId(a));
     JSONObject result=(JSONObject)xtream(a,"",new JSONObject());JSONObject user=result.optJSONObject("user_info");
@@ -95,6 +91,51 @@ final class Portal {
   Map<String,List<String>> q=new HashMap<>();q.put("targetId",Collections.singletonList(target(url)));
   JSONObject result=new JSONObject(backend.handle("GET","/parse",q,null).bodyText());
   if(result.has("error"))throw new java.io.IOException("Unable to load playlist");return result;
+ }
+ static int connectionFailure(Exception error) {
+  String message=error.getMessage();
+  if ("Provider returned a web page instead of IPTV data. Check the address or network.".equals(message)) return 1;
+  if ("Login rejected. Check your username and password.".equals(message)) return 2;
+  if ("Subscription is not active".equals(message)) return 3;
+  if ("Provider request failed".equals(message)) return 4;
+  if (error instanceof java.io.IOException) return 5;
+  return 0;
+ }
+ private Object accountRequest(String method, JSONObject args) throws Exception {
+  AccountProfiles book=new AccountProfiles(store.read());
+  JSONObject account=book.current();
+  if ("config".equals(method)) {
+   return new JSONObject().put("configured",account.length()>0).put("activeId",book.activeId())
+    .put("profiles",book.labels()).put("label",account.optString("label"))
+    .put("host",account.optString("host")).put("username",account.optString("username"))
+    .put("mode",account.optString("mode","xtream")).put("playlist",account.optString("playlist"))
+    .put("hasPassword",!account.optString("password").isEmpty());
+  }
+  if ("switchAccount".equals(method)) {
+   book.select(args.getString("id"));
+  } else if ("forget".equals(method)) {
+   book.remove(args.getString("activeId"));
+  } else {
+   boolean adding=args.optBoolean("adding");
+   String mode=args.optString("mode","xtream");
+   String label=args.optString("label").trim();
+   if (label.length()>60) throw new IllegalArgumentException("Account name is too long.");
+   JSONObject next=new JSONObject().put("mode",mode).put("label",label);
+   if ("m3u".equals(mode)) {
+    next.put("playlist",validHost(args.getString("playlist")));
+   } else if ("xtream".equals(mode)) {
+    String host=xtreamHost(args.getString("host")),user=args.getString("username").trim();
+    String password=args.optString("password");
+    if (!adding && password.isEmpty() && host.equals(account.optString("host"))
+        && user.equals(account.optString("username"))) password=account.optString("password");
+    if (password.isEmpty()||user.isEmpty()) throw new IllegalArgumentException("Username and password are required");
+    next.put("host",host).put("username",user).put("password",password);
+   } else throw new IllegalArgumentException("Invalid account type.");
+   book.save(args.getString("activeId"),adding,next);
+  }
+  store.save(book.encoded());
+  streams.clear();
+  return true;
  }
  private static String sourceId(JSONObject a) throws Exception {byte[] data=java.security.MessageDigest.getInstance("SHA-256").digest((a.optString("host")+"|"+a.optString("username")+"|"+a.optString("playlist")).getBytes(StandardCharsets.UTF_8));StringBuilder s=new StringBuilder();for(int i=0;i<8;i++)s.append(String.format(java.util.Locale.ROOT,"%02x",data[i]));return s.toString();}
 }

@@ -1,7 +1,7 @@
 'use strict';
 window.EmbeddedKeyboard=(()=>{
  const get=id=>document.getElementById(id),dialog=get('keyboard-dialog'),editor=get('keyboard-input');
- const fields=['host','username','password','playlist','search'];
+ const fields=['account-name','host','username','password','playlist','search'];
  let target=null,arabic=false,caps=false,symbols=false,car=false;
  const text=(ar,en)=>document.documentElement.lang==='ar'?ar:en;
  const symbolRows=["1234567890","!@#$%^&*()","-_=+[]{}\\|",";:'\",.<>/?`~"];

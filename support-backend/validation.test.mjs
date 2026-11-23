@@ -8,3 +8,12 @@ test('Auto diagnostics accepted without changing existing clients',()=>{for(cons
 test('Auto rejects free form installation data and unrelated inventory',()=>{for(const event of [{at:1,kind:'install',target:'other-app'},{at:1,kind:'install-check',installer:'com.secret.personal'},{at:1,kind:'install',method:'pm install SECRET'},{at:1,kind:'install-check',path:'/private/account.apk'}])assert.throws(()=>validate({...input(),app:'auto',events:[event]}));});
 
 test('shared device proof is optional but strictly paired',()=>{const x=input();assert.equal(validate(x).p_device,null);const device='11111111-1111-4111-8111-111111111111',proof='a'.repeat(64);assert.equal(validate({...x,device_id:device,device_token:proof}).p_device,device);for(const fields of [{device_id:device},{device_id:device,device_token:'short'},{device_token:proof},{device_id:'bad',device_token:proof}])assert.throws(()=>validate({...x,...fields}));assert.equal(validate({...x,action:'delete',device_id:device}).p_device,null);});
+
+test('IPTV provider failures allow only a fixed reason code',()=>{
+ const event={at:1,kind:'provider-connect',state:'failed',code:1};
+ assert.deepEqual(validate({...input(),app:'iptv',events:[event]}).p_events,[event]);
+ for(const e of [{...event,code:8},{...event,url:'https://private.example'},{...event,state:'ready'}]){
+  assert.throws(()=>validate({...input(),app:'iptv',events:[e]}));
+ }
+ assert.throws(()=>validate({...input(),events:[event]}));
+});
