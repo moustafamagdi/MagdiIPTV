@@ -10,17 +10,21 @@ import org.json.JSONObject;
 final class AccountProfiles {
     private final JSONObject accounts;
     private String active;
+    private String lastConnected;
 
     AccountProfiles(JSONObject saved) throws JSONException {
         JSONObject entries = saved.optJSONObject("profiles");
         if (entries != null) {
             accounts = entries;
             active = saved.optString("active");
+            lastConnected = saved.optString("lastConnected");
         } else {
             accounts = new JSONObject();
             active = "";
+            lastConnected = "";
             if (saved.length() != 0) {
                 active = "original";
+                lastConnected = active;
                 accounts.put(active, saved);
             }
         }
@@ -57,13 +61,26 @@ final class AccountProfiles {
         active = id;
     }
 
+    boolean remember(String expected) {
+        if (!active.equals(expected) || active.isEmpty() || active.equals(lastConnected)) return false;
+        lastConnected = active;
+        return true;
+    }
+
+    boolean restore() {
+        if (active.equals(lastConnected) || accounts.optJSONObject(lastConnected) == null) return false;
+        active = lastConnected;
+        return true;
+    }
+
     void remove(String expected) {
         if (!active.equals(expected)) throw new IllegalArgumentException("Active account changed. Open settings again.");
+        if (active.equals(lastConnected)) lastConnected = "";
         accounts.remove(active);
         active = accounts.keys().hasNext() ? accounts.keys().next() : "";
     }
 
     JSONObject encoded() throws JSONException {
-        return new JSONObject().put("profiles", accounts).put("active", active);
+        return new JSONObject().put("profiles", accounts).put("active", active).put("lastConnected", lastConnected);
     }
 }

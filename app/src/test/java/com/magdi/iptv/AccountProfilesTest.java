@@ -40,4 +40,18 @@ public class AccountProfilesTest {
   assertEquals(1,event.getInt("code"));
   assertNull(SupportPolicy.event("IPTV provider connect failed=https://unsafe.example",123L));
  }
+ @Test public void startupRestoresLastConnectedRatherThanUnverifiedNewAccount() throws Exception {
+  AccountProfiles book=new AccountProfiles(new JSONObject().put("mode","xtream"));
+  String original=book.activeId();
+  book.save(original,true,new JSONObject().put("mode","m3u"));
+  String second=book.activeId();
+  assertTrue(book.restore());
+  assertEquals(original,book.activeId());
+  book.select(second);
+  assertTrue(book.remember(second));
+  book.select(original);
+  book=new AccountProfiles(new JSONObject(book.encoded().toString()));
+  assertTrue(book.restore());
+  assertEquals(second,book.activeId());
+ }
 }

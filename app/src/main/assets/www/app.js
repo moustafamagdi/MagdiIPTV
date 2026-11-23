@@ -17,7 +17,7 @@ function notice(text){$('notice').textContent=text||'';$('notice').hidden=!text;
 function message(text){$('playback-message').textContent=text||'';$('playback-message').hidden=!text;}
 function errorText(e){return language==='ar'?t('offline')+'\n'+e.message:e.message;}
 function busy(button,value){button.disabled=value;}
-async function initialize(){applyLanguage();try{env=await api('environment');$('app-version').textContent=env.version||'';Controller.configure(env);EmbeddedKeyboard.configure(!!env.car);$('keyboard').hidden=!env.car;$('search').readOnly=!!env.car;$('background').checked=env.background;$('setup-auto').hidden=!!env.car;$('log-sessions').hidden=!!env.car;account=await api('config');$('welcome-state').textContent=t(account.configured?'ready':'noAccount');await api('ready');}catch(e){notice(errorText(e));}}
+async function initialize(){applyLanguage();try{env=await api('environment');$('app-version').textContent=env.version||'';Controller.configure(env);EmbeddedKeyboard.configure(!!env.car);$('keyboard').hidden=!env.car;$('search').readOnly=!!env.car;$('background').checked=env.background;$('setup-auto').hidden=!!env.car;$('log-sessions').hidden=!!env.car;if(!env.car)await api('restoreAccount');account=await api('config');$('welcome-state').textContent=t(account.configured?'ready':'noAccount');await api('ready');if(account.configured&&!env.car)await connectAccount();}catch(e){notice(errorText(e));}}
 let addingAccount=false,accountBusy=false;
 function renderAccountForm(){
  const picker=$('saved-accounts');
@@ -59,7 +59,7 @@ async function changeAccount(method,args,connect=false){
  try{
   await api(method,args);account=await api('config');addingAccount=false;clearSubscriptionView();renderAccountForm();
   $('form-status').textContent=t(method==='forget'?'forgotten':'saved');
-  if(connect&&account.configured){$('settings-dialog').close();await connectAccount();}
+  if(connect&&account.configured){$('settings-dialog').close();await connectAccount(true);}
  }catch(e){$('form-status').textContent=errorText(e);}
  finally{
   accountBusy=false;submit.disabled=false;$('save-only').disabled=false;$('add-account').disabled=false;
@@ -71,11 +71,26 @@ async function save(connect){
  mode:$('source-mode').value,host:$('host').value.trim(),username:$('username').value.trim(),
  password:$('password').value,playlist:$('playlist').value.trim()},connect);
 }
-async function connectAccount(){if(!account.configured){await openSettings();return;}const connection=++connectionGeneration;connectionBusy(true);stop();$('workspace').hidden=true;$('welcome').hidden=false;busy($('connect'),true);notice('');$('welcome-state').textContent=t('connecting');try{const info=await api('connect');if(connection!==connectionGeneration)return;stop();publicSource='';source=info.source;mode=info.mode;favorites=readStore(source+':favorites',[]);recent=readStore(source+':recent',[]);positions=readStore(source+':positions',{});cache.clear();if(mode==='m3u'){const data=await api('playlist');if(connection!==connectionGeneration)return;if(!Array.isArray(data.playlist?.items))throw new Error('Invalid M3U response');playlistItems=data.playlist.items.map((c,i)=>({id:String(i)+':'+hash(c.url||''),type:'live',name:c.name||'Channel '+(i+1),...Metadata.fields(c),group:c.group?.title||c.group||'',url:c.url,ext:/\.m3u8(?:\?|$)/i.test(c.url||'')?'m3u8':/\.ts(?:\?|$)/i.test(c.url||'')?'ts':'mp4'}));}
+async function connectAccount(offerHttp=false){if(!account.configured){await openSettings();return;}const connection=++connectionGeneration;connectionBusy(true);stop();$('workspace').hidden=true;$('welcome').hidden=false;busy($('connect'),true);notice('');$('welcome-state').textContent=t('connecting');try{
+ const args={activeId:account.activeId||''};
+ let info;
+ try{info=await api('connect',args,130000);}
+ catch(e){
+  if(e.message!=='HTTPS connection failed. HTTP retry requires confirmation.')throw e;
+  if(connection!==connectionGeneration)return;
+  if(offerHttp!==true||!confirm(t('confirmHttpRetry')))throw new Error(t('httpsRetryHint'));
+  info=await api('connect',{...args,retryHttp:true});
+ }
+ if(connection!==connectionGeneration)return;stop();publicSource='';source=info.source;mode=info.mode;favorites=readStore(source+':favorites',[]);recent=readStore(source+':recent',[]);positions=readStore(source+':positions',{});cache.clear();if(mode==='m3u'){const data=await api('playlist');if(connection!==connectionGeneration)return;if(!Array.isArray(data.playlist?.items))throw new Error('Invalid M3U response');playlistItems=data.playlist.items.map((c,i)=>({id:String(i)+':'+hash(c.url||''),type:'live',name:c.name||'Channel '+(i+1),...Metadata.fields(c),group:c.group?.title||c.group||'',url:c.url,ext:/\.m3u8(?:\?|$)/i.test(c.url||'')?'m3u8':/\.ts(?:\?|$)/i.test(c.url||'')?'ts':'mp4'}));}
+ void api('rememberAccount',args).catch(()=>{});
  ++loadGeneration;updateSourceLabel();$('welcome').hidden=true;$('workspace').hidden=false;document.querySelectorAll('[data-tab=vod],[data-tab=series]').forEach(e=>e.hidden=mode==='m3u');await changeTab('live');
  }catch(e){if(connection===connectionGeneration){$('welcome-state').textContent=t('offline');notice(errorText(e));}}finally{if(connection===connectionGeneration)connectionBusy(false);}}
-function connectionBusy(value){for(const id of ['connect','configure','settings','public-open','public-switch','subscription-switch','public-load','refresh'])busy($(id),value);$('public-preset').disabled=value;EmbeddedSelects.refresh();}
-function updateSourceLabel(){$('active-source').textContent=publicSource?t({world:'publicWorld',egypt:'publicEgypt',saudi:'publicSaudi'}[publicSource]):t('mySubscription');$('subscription-switch').hidden=!publicSource;}
+function connectionBusy(value){for(const id of ['connect','configure','settings','public-open','public-switch','subscription-switch','change-subscription','public-load','refresh'])busy($(id),value);$('public-preset').disabled=value;EmbeddedSelects.refresh();}
+function activeAccountName(){
+ const index=(account.profiles||[]).findIndex(profile=>profile.id===account.activeId);
+ return account.label||(index>=0?t('accountName')+' '+(index+1):t('mySubscription'));
+}
+function updateSourceLabel(){$('active-source').textContent=publicSource?t({world:'publicWorld',egypt:'publicEgypt',saudi:'publicSaudi'}[publicSource]):activeAccountName();$('subscription-switch').hidden=!publicSource;}
 function openPublic(){if(publicSource)$('public-preset').value=publicSource;$('public-status').textContent='';EmbeddedSelects.refresh();if(!$('public-dialog').open)$('public-dialog').showModal();}
 function cancelPublic(){++connectionGeneration;connectionBusy(false);$('public-dialog').close();}
 async function connectPublic(){const preset=$('public-preset').value,connection=++connectionGeneration;connectionBusy(true);$('public-status').textContent=t('publicLoading');
@@ -211,7 +226,7 @@ setInterval(()=>{if(current){emit('telemetry');savePosition();}},10000);
 setInterval(updateSeekControls,500);
 $('restart-start').onclick=restartFromBeginning;$('play-pause').onclick=()=>v.paused?resume():pause();$('stop').onclick=()=>Controller.stopLocal();$('retry').onclick=()=>{if(current)play(current);};$('previous').onclick=()=>skip(-1);$('next').onclick=()=>skip(1);$('mute').onclick=()=>{v.muted=!v.muted;$('mute').textContent=v.muted?'×♪':'♪';};$('full').onclick=toggleFullscreen;$('exit-full').onclick=()=>full(false);$('seek').onpointerdown=()=>seekDragging=true;$('seek').onpointercancel=$('seek').onpointerup=()=>seekDragging=false;$('seek').onchange=()=>{seekDragging=false;seekTo(Number($('seek').value)/100*v.duration);};$('seek-back').onclick=()=>seekBy(-10);$('seek-forward').onclick=()=>seekBy(10);$('format').onchange=()=>{if(current)play(current);};$('favorite-current').onclick=()=>{if(current)toggleFavorite(current);};
 $('public-open').onclick=openPublic;$('public-switch').onclick=openPublic;$('public-close').onclick=cancelPublic;$('public-load').onclick=connectPublic;$('subscription-switch').onclick=connectAccount;
-$('settings').onclick=()=>openSettings().catch(e=>notice(errorText(e)));$('configure').onclick=$('settings').onclick;$('connect').onclick=connectAccount;$('close-settings').onclick=()=>$('settings-dialog').close();$('account-form').onsubmit=e=>{e.preventDefault();save(true);};$('save-only').onclick=()=>save(false);$('source-mode').onchange=sourceMode;
+$('settings').onclick=()=>openSettings().catch(e=>notice(errorText(e)));$('configure').onclick=$('settings').onclick;$('connect').onclick=()=>connectAccount(true);$('change-subscription').onclick=$('settings').onclick;$('close-settings').onclick=()=>$('settings-dialog').close();$('account-form').onsubmit=e=>{e.preventDefault();save(true);};$('save-only').onclick=()=>save(false);$('source-mode').onchange=sourceMode;
 $('background').onchange=()=>api('background',{enabled:$('background').checked}).catch(e=>notice(errorText(e)));$('setup-auto').onclick=()=>api('setup',{language});$('log-sessions').onclick=()=>api('logSessions',{language});
 $('saved-accounts').onchange=updateAccountSwitch;
 $('add-account').onclick=()=>{if(accountBusy)return;addingAccount=true;renderAccountForm();$('form-status').textContent=t('addingAccount');};

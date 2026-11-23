@@ -18,16 +18,25 @@ final class Portal {
  Portal(Context c,StreamProxy p){store=new AccountStore(c);streams=p;}
  static String enc(String value){try{return URLEncoder.encode(value,"UTF-8").replace("+","%20");}catch(java.io.UnsupportedEncodingException e){throw new IllegalStateException(e);}}
  static String validHost(String text){URI u=URI.create(text.trim());if(!("http".equals(u.getScheme())||"https".equals(u.getScheme()))||u.getHost()==null||u.getRawUserInfo()!=null||u.getFragment()!=null)throw new IllegalArgumentException("Enter a valid HTTP or HTTPS server address");return text.trim().replaceAll("/+$","");}
- // Providers commonly send legacy Xtream addresses as host:port.
+ // Scheme-less addresses are valid input; HTTPS is their first transport.
  static String xtreamHost(String text) {
   String address=text.trim();
-  if(address.matches("(?i)(?:[a-z0-9.-]+|\\[[0-9a-f:]+\\]):[0-9]{1,5}/?")) {
-   URI uri=URI.create("http://"+address);
-   if(uri.getPort()<1||uri.getPort()>65535) throw new IllegalArgumentException("Enter a valid server port");
-   address=uri.toString();
+  boolean explicit=address.regionMatches(true,0,"http://",0,7)
+    ||address.regionMatches(true,0,"https://",0,8);
+  if(!explicit){
+   if(address.contains("://"))throw new IllegalArgumentException("Enter a valid HTTP or HTTPS server address");
+   address="https://"+address;
   }
-  return validHost(address);
+  else {
+   int schemeEnd=address.indexOf(':');
+   address=address.substring(0,schemeEnd).toLowerCase(Locale.ROOT)+address.substring(schemeEnd);
+  }
+  address=validHost(address);
+  int port=URI.create(address).getPort();
+  if(port==0||port>65535)throw new IllegalArgumentException("Enter a valid server port");
+  return address;
  }
+ static final String HTTP_RETRY="HTTPS connection failed. HTTP retry requires confirmation.";
  private String target(String url) throws Exception {WebBackend.Response r=backend.handle("POST","/provider-targets",Collections.emptyMap(),new JSONObject().put("url",url).toString());return new JSONObject(r.bodyText()).getString("targetId");}
  private Object xtream(JSONObject a,String action,JSONObject args) throws Exception {
   Map<String,List<String>> query=new LinkedHashMap<>();query.put("targetId",Collections.singletonList(target(xtreamHost(a.getString("host")))));query.put("username",Collections.singletonList(a.getString("username")));query.put("password",Collections.singletonList(a.getString("password")));
@@ -44,19 +53,14 @@ final class Portal {
    String url=publicLists.selected(args.getString("preset"),args.getString("url"));
    streams.clear();return streams.register(url);
   }
-  if (Arrays.asList("config","save","forget","switchAccount").contains(method)) {
+  if (Arrays.asList("config","save","forget","switchAccount","restoreAccount","rememberAccount").contains(method)) {
    synchronized (AccountStore.class) { return accountRequest(method,args); }
   }
-  JSONObject a;
-  synchronized (AccountStore.class) { a=new AccountProfiles(store.read()).current(); }
+  AccountProfiles profiles;
+  synchronized (AccountStore.class) { profiles=new AccountProfiles(store.read()); }
+  JSONObject a=profiles.current();
   switch(method){
-   case "connect": {
-    if("m3u".equals(a.optString("mode")))return new JSONObject().put("status","M3U").put("mode","m3u").put("source",sourceId(a));
-    JSONObject result=(JSONObject)xtream(a,"",new JSONObject());JSONObject user=result.optJSONObject("user_info");
-    if(user==null||user.optInt("auth",0)!=1)throw new java.io.IOException("Login rejected. Check your username and password.");
-    if(!"Active".equalsIgnoreCase(user.optString("status","Active")))throw new java.io.IOException("Subscription is not active");
-    return new JSONObject().put("status",user.optString("status","Active")).put("mode","xtream").put("source",sourceId(a)).put("formats",user.optJSONArray("allowed_output_formats")).put("expires",user.optString("exp_date"));
-   }
+   case "connect": return connect(a,profiles.activeId(),args);
    case "catalog": {
     String type=args.optString("type","live"),action;
     if(!Arrays.asList("live","vod","series").contains(type))throw new IllegalArgumentException("Invalid catalog");
@@ -92,8 +96,50 @@ final class Portal {
   JSONObject result=new JSONObject(backend.handle("GET","/parse",q,null).bodyText());
   if(result.has("error"))throw new java.io.IOException("Unable to load playlist");return result;
  }
+ private JSONObject connect(JSONObject account,String id,JSONObject args) throws Exception {
+  if(account.length()==0)throw new IllegalArgumentException("Saved account was not found.");
+  if(args.has("activeId")&&!id.equals(args.getString("activeId")))
+   throw new IllegalArgumentException("Active account changed. Open settings again.");
+  if("m3u".equals(account.optString("mode")))
+   return new JSONObject().put("status","M3U").put("mode","m3u").put("source",sourceId(account));
+  String host=xtreamHost(account.getString("host"));
+  boolean secure=host.startsWith("https:");
+  boolean approvedHttp=secure&&args.optBoolean("retryHttp");
+  JSONObject candidate=account;
+  if(approvedHttp)candidate=alternate(account,host,"http");
+  Object payload;
+  try {
+   payload=xtream(candidate,"",new JSONObject());
+  } catch(java.io.IOException failure) {
+   if(approvedHttp)throw failure;
+   if(secure)throw new java.io.IOException(HTTP_RETRY,failure);
+   candidate=alternate(account,host,"https");
+   payload=xtream(candidate,"",new JSONObject());
+  }
+  JSONObject result=payload instanceof JSONObject?(JSONObject)payload:null;
+  JSONObject user=result==null?null:result.optJSONObject("user_info");
+  if(user==null||user.optInt("auth",0)!=1)throw new java.io.IOException("Login rejected. Check your username and password.");
+  if(!"Active".equalsIgnoreCase(user.optString("status","Active")))throw new java.io.IOException("Subscription is not active");
+  synchronized(AccountStore.class) {
+   AccountProfiles current=new AccountProfiles(store.read());
+   if(!id.equals(current.activeId())||!account.toString().equals(current.current().toString()))
+    throw new IllegalArgumentException("Active account changed. Open settings again.");
+   if(candidate!=account) {
+    candidate.put("historySource",sourceId(account));
+    current.save(id,false,candidate);
+    store.save(current.encoded());
+   }
+  }
+  return new JSONObject().put("status",user.optString("status","Active")).put("mode","xtream")
+   .put("source",sourceId(candidate)).put("formats",user.optJSONArray("allowed_output_formats"))
+   .put("expires",user.optString("exp_date"));
+ }
+ private static JSONObject alternate(JSONObject account,String host,String scheme) throws JSONException {
+  return new JSONObject(account.toString()).put("host",scheme+host.substring(host.indexOf(':')));
+ }
  static int connectionFailure(Exception error) {
   String message=error.getMessage();
+  if(HTTP_RETRY.equals(message)&&error.getCause() instanceof Exception)return connectionFailure((Exception)error.getCause());
   if ("Provider returned a web page instead of IPTV data. Check the address or network.".equals(message)) return 1;
   if ("Login rejected. Check your username and password.".equals(message)) return 2;
   if ("Subscription is not active".equals(message)) return 3;
@@ -103,6 +149,14 @@ final class Portal {
  }
  private Object accountRequest(String method, JSONObject args) throws Exception {
   AccountProfiles book=new AccountProfiles(store.read());
+  if ("rememberAccount".equals(method)) {
+   if(book.remember(args.getString("activeId")))store.save(book.encoded());
+   return true;
+  }
+  if ("restoreAccount".equals(method)) {
+   if(book.restore()){store.save(book.encoded());streams.clear();return true;}
+   return false;
+  }
   JSONObject account=book.current();
   if ("config".equals(method)) {
    return new JSONObject().put("configured",account.length()>0).put("activeId",book.activeId())
@@ -130,6 +184,8 @@ final class Portal {
         && user.equals(account.optString("username"))) password=account.optString("password");
     if (password.isEmpty()||user.isEmpty()) throw new IllegalArgumentException("Username and password are required");
     next.put("host",host).put("username",user).put("password",password);
+    if(!adding&&host.equals(account.optString("host"))&&user.equals(account.optString("username"))&&account.has("historySource"))
+     next.put("historySource",account.getString("historySource"));
    } else throw new IllegalArgumentException("Invalid account type.");
    book.save(args.getString("activeId"),adding,next);
   }
@@ -137,5 +193,5 @@ final class Portal {
   streams.clear();
   return true;
  }
- private static String sourceId(JSONObject a) throws Exception {byte[] data=java.security.MessageDigest.getInstance("SHA-256").digest((a.optString("host")+"|"+a.optString("username")+"|"+a.optString("playlist")).getBytes(StandardCharsets.UTF_8));StringBuilder s=new StringBuilder();for(int i=0;i<8;i++)s.append(String.format(java.util.Locale.ROOT,"%02x",data[i]));return s.toString();}
+ private static String sourceId(JSONObject a) throws Exception {if(a.has("historySource"))return a.getString("historySource");byte[] data=java.security.MessageDigest.getInstance("SHA-256").digest((a.optString("host")+"|"+a.optString("username")+"|"+a.optString("playlist")).getBytes(StandardCharsets.UTF_8));StringBuilder s=new StringBuilder();for(int i=0;i<8;i++)s.append(String.format(java.util.Locale.ROOT,"%02x",data[i]));return s.toString();}
 }

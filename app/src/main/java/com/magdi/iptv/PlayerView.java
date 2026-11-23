@@ -120,7 +120,7 @@ public final class PlayerView extends FrameLayout {
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)||"logSessions".equals(method)){boolean ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone)Diagnostics.open((android.app.Activity)getContext(),ar);});value=true;}
      else if("setup".equals(method)){String language=args.optString("language","ar");timer.post(()->{if(phone)getContext().startActivity(new Intent(getContext(),InstallSetupActivity.class).putExtra("language",language));});value=true;}
-     else {value=portal.call(method,args);if("save".equals(method)||"forget".equals(method)||"switchAccount".equals(method))timer.post(CarController::accountChanged);}
+     else {value=portal.call(method,args);if("save".equals(method)||"forget".equals(method)||"switchAccount".equals(method)||("restoreAccount".equals(method)&&Boolean.TRUE.equals(value)))timer.post(CarController::accountChanged);}
      answer.put("ok",true).put("value",value==null?JSONObject.NULL:value);
     }catch(Exception e){if("connect".equals(method))Diagnostics.event("IPTV provider connect failed="+Portal.connectionFailure(e));try{answer.put("ok",false).put("error",safeError(e));}catch(JSONException ignored){}Diagnostics.event(surface+" request="+(method!=null&&method.matches("[a-z]{1,20}")?method:"unknown")+" failed="+e.getClass().getSimpleName());}
     String encoded=answer.toString();timer.post(()->{if(!closed)web.evaluateJavascript("window.nativeReply("+id+","+encoded+")",null);});
@@ -141,7 +141,7 @@ public final class PlayerView extends FrameLayout {
  private static String safeError(Exception e){
   if(e instanceof IllegalArgumentException)return "Check the server address and required fields.";
   if(e instanceof JSONException)return "Unexpected server response. Check the address, account and network.";
-  if(e instanceof java.io.IOException){String m=e.getMessage();if(m!=null&&(m.startsWith("Provider returned")||m.startsWith("Login rejected")||m.startsWith("Subscription")))return m;return "Cannot reach the IPTV server. Check your network or try again.";}
+  if(e instanceof java.io.IOException){String m=e.getMessage();if(Portal.HTTP_RETRY.equals(m))return m;if(m!=null&&(m.startsWith("Provider returned")||m.startsWith("Login rejected")||m.startsWith("Subscription")))return m;return "Cannot reach the IPTV server. Check your network or try again.";}
   return "Request could not be completed. Check your settings and retry.";
  }
  void controllerChanged(){sampleGeneration++;sampleInFlight=false;pendingResume=false;}
