@@ -28,12 +28,11 @@ window.Controller=(()=>{
  }
  async function command(action,extra={}){
   const own=++intent,connection=last.epoch;
-  // No wait-for-connection path: never carry a click across reconnection.
-  if(!last.connected){if(action==='select')openCar();alertDisconnected();return false;}
+  if(!last.connected&&action!=='select'&&action!=='stop'){alertDisconnected();return false;}
   try{const accepted=await api('controllercommand',{...extra,action,epoch:connection,request:last.request},2500);if(own!==intent)return accepted;
    if(!accepted){notice(t('carCommandFailed'));poll();return false;}
    // Sending is not evidence of playing or paused. Buttons follow the next observed state.
-   if(action==='select')openCar();poll();return true;
+   poll();return true;
   }catch{if(own===intent)notice(t('carCommandFailed'));return false;}
  }
  function select(item){const context={source,publicSource,tab,category:$('category').value,search:$('search').value,format:$('format').value};if(item.type==='episode')context.episodes=(seriesData?.[$('season').value]||[]).map(e=>({id:String(e.id),type:'episode',name:String(e.title||seriesName),ext:e.container_extension||'mp4'}));return command('select',{item,context});}

@@ -90,7 +90,18 @@ public final class PlayerView extends FrameLayout {
       else if("carstop".equals(method)){if(phone||!CarController.accepts(PlayerView.this))throw new IllegalStateException();value=CarController.command(args.put("action","stop"));}
       else if("controlleropen".equals(method)){if(!phone||!active)throw new IllegalStateException();carLaunch.request();value=carLaunch.status();}
       else if("controllerstate".equals(method))value=CarController.status().put("launch",phone?carLaunch.status():"idle");
-      else if("controllercommand".equals(method)){if(phone&&"stop".equals(args.optString("action")))carLaunch.cancel();value=phone&&CarController.command(args);}
+      else if("controllercommand".equals(method)){if(phone&&"stop".equals(args.optString("action")))carLaunch.cancel();value=phone&&CarController.command(args);
+       if(phone&&"select".equals(args.optString("action"))){
+        if(Boolean.TRUE.equals(value)){carLaunch.cancel();carLaunch.request();}
+        else if(args.toString().length()<=100000&&args.optJSONObject("item")!=null
+                &&Arrays.asList("live","vod","episode").contains(args.getJSONObject("item").optString("type"))){
+         carLaunch.request(()->{
+          try{return CarController.command(args.put("epoch",CarController.epoch()));}
+          catch(JSONException invalid){return false;}
+         });
+         value=carLaunch.pending()||"opened".equals(carLaunch.status());
+        }
+       }}
       else {
        if(phone||!CarController.accepts(PlayerView.this,args.optLong("epoch",-1),args.optLong("request",-1)))throw new IllegalStateException("Car player unavailable");
        value=portal.call(method,args);MediaCardService.select(PlayerView.this);
