@@ -7,8 +7,6 @@ import android.net.Uri;
 /** Diagnostics for an experimental, user-confirmed self-reinstall. No AA acceptance claim. */
 final class InstallSetup {
  static final String PREFS="installSetup";
- static final String KING_PACKAGE="com.example.kinginstaller";
- static final String KING_RELEASES="https://github.com/fcaronte/KingInstaller/releases";
  static final class Snapshot {
   final String installer,initiator,error; final long updated;
   Snapshot(String installer,String initiator,long updated,String error){this.installer=installer;this.initiator=initiator;this.updated=updated;this.error=error;}
@@ -51,15 +49,5 @@ final class InstallSetup {
    default:return ar?"تعذّر بدء التثبيت؛ صدّر اللوج":"Unable to start installation; export the log";
   }
  }
- static Intent intent(Uri uri){Intent i=new Intent(Intent.ACTION_INSTALL_PACKAGE).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).putExtra(Intent.EXTRA_INSTALLER_PACKAGE_NAME,"com.android.vending").putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE,true).putExtra("installerPackageName","com.android.vending").putExtra("android.intent.extra.INSTALL_REASON",1).putExtra(Intent.EXTRA_RETURN_RESULT,true);i.setClipData(ClipData.newRawUri("MM IPTV APK",uri));return i;}
- static Intent kingIntent(Uri uri){Intent i=new Intent(Intent.ACTION_SEND).setPackage(KING_PACKAGE).setType("application/vnd.android.package-archive").putExtra(Intent.EXTRA_STREAM,uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);i.setClipData(ClipData.newRawUri("MM IPTV APK",uri));return i;}
- static boolean kingAvailable(Context c){return c.getPackageManager().resolveActivity(kingIntent(Uri.parse("content://"+c.getPackageName()+".reports/installer/MM-IPTV.apk")),PackageManager.MATCH_DEFAULT_ONLY)!=null;}
- static ComponentName systemInstaller(Context c,Intent intent){
-  PackageManager pm=c.getPackageManager();ResolveInfo preferred=pm.resolveActivity(intent,PackageManager.MATCH_DEFAULT_ONLY);
-  for(ResolveInfo r:pm.queryIntentActivities(intent,PackageManager.MATCH_DEFAULT_ONLY))if(isSystem(r)&&preferred!=null&&preferred.activityInfo!=null&&r.activityInfo.packageName.equals(preferred.activityInfo.packageName)&&r.activityInfo.name.equals(preferred.activityInfo.name))return new ComponentName(r.activityInfo.packageName,r.activityInfo.name);
-  for(ResolveInfo r:pm.queryIntentActivities(intent,PackageManager.MATCH_DEFAULT_ONLY))if(isSystem(r))return new ComponentName(r.activityInfo.packageName,r.activityInfo.name);
-  return null;
- }
- private static boolean isSystem(ResolveInfo r){return r!=null&&r.activityInfo!=null&&r.activityInfo.exported&&(r.activityInfo.applicationInfo.flags&(ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_UPDATED_SYSTEM_APP))!=0;}
  private InstallSetup(){}
 }

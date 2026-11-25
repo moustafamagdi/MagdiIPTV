@@ -91,3 +91,5 @@ html:has(dialog[open]),html:has(dialog[open]) body{overflow:hidden;overscroll-be
 
 #log-sessions{width:100%;margin:10px 0}.settings-advanced{margin:12px 0}.settings-advanced>summary{min-height:48px;display:list-item;padding:12px 6px;font-size:16px;color:var(--text);cursor:pointer}
 .picture-fit-row{display:flex;justify-content:flex-end}.picture-fit-row button{min-height:44px;padding:5px 12px;font-size:13px;background:#101b28cc}
+
+#controller-open{background:#285ca0;color:#fff;border:1px solid #a3ccff;font-weight:700;min-height:48px;padding:12px 20px;box-shadow:0 3px 10px #0002}.settings-advanced{border:1px solid #53657b;border-radius:12px;padding:14px;margin-block:14px;background:#14243a}.settings-advanced summary{font-weight:700;cursor:pointer;min-height:44px}.settings-advanced .settings-extras{padding:12px;border-top:1px solid #53657b;margin-top:10px}
