@@ -18,6 +18,7 @@ public final class MediaCardService extends MediaBrowserServiceCompat {
  private static WeakReference<MediaCardService> running=new WeakReference<>(null);
  private static final MediaCardBinding binding=new MediaCardBinding();
  private MediaSessionCompat session;
+ private int diagnosticPlayback=Integer.MIN_VALUE;
  private boolean available,metadataPublished;
  static final class State {
   final boolean playing,muted,ready;final long position;
@@ -53,7 +54,7 @@ public final class MediaCardService extends MediaBrowserServiceCompat {
    public void onSeekTo(long position){seek(position);}
    public void onPlayFromMediaId(String id,Bundle extras){if(CURRENT.equals(id))command(true);}
   });
-  setSessionToken(session.getSessionToken());session.setActive(true);publish();Diagnostics.event("Media card service connected; no additional audio focus requested");
+  setSessionToken(session.getSessionToken());session.setActive(true);Diagnostics.event("Media card observation=session-active");publish();Diagnostics.event("Media card service connected; no additional audio focus requested");
  }
  private boolean ar(){return getResources().getConfiguration().getLocales().get(0).getLanguage().equals("ar");}
  @Override public BrowserRoot onGetRoot(String pkg,int uid,Bundle hints){
@@ -82,7 +83,8 @@ public final class MediaCardService extends MediaBrowserServiceCompat {
   }
   String phase=now?state.observed.optString("phase"):"";
   int playback=!now?PlaybackStateCompat.STATE_NONE:Arrays.asList("loading","buffering","seeking","recovering").contains(phase)?PlaybackStateCompat.STATE_BUFFERING:"error".equals(phase)?PlaybackStateCompat.STATE_ERROR:"ended".equals(phase)||"idle".equals(phase)?PlaybackStateCompat.STATE_STOPPED:state.playing?PlaybackStateCompat.STATE_PLAYING:PlaybackStateCompat.STATE_PAUSED;
-  session.setPlaybackState(new PlaybackStateCompat.Builder().setActions(actions).setState(playback,now?state.position:0,playback==PlaybackStateCompat.STATE_PLAYING?1f:0f).build());
+  if(diagnosticPlayback!=playback){diagnosticPlayback=playback;String diagnosticState=playback==PlaybackStateCompat.STATE_PLAYING?"playing":playback==PlaybackStateCompat.STATE_PAUSED?"paused":playback==PlaybackStateCompat.STATE_BUFFERING?"buffering":playback==PlaybackStateCompat.STATE_STOPPED?"stopped":playback==PlaybackStateCompat.STATE_ERROR?"error":"none";Diagnostics.event("Media card observation="+diagnosticState);}
+   session.setPlaybackState(new PlaybackStateCompat.Builder().setActions(actions).setState(playback,now?state.position:0,playback==PlaybackStateCompat.STATE_PLAYING?1f:0f).build());
   if(now!=available){available=now;notifyChildrenChanged(ROOT);}
  }
  void command(boolean play){
@@ -100,5 +102,5 @@ public final class MediaCardService extends MediaBrowserServiceCompat {
   double duration=state.observed.optDouble("duration",0);if(position<0||!Double.isFinite(duration)||duration<=0||position>duration*1000)return;
   try{CarController.command(new org.json.JSONObject().put("action","seek").put("epoch",state.epoch).put("request",state.request).put("percent",position/(duration*10)));}catch(org.json.JSONException ignored){}
  }
- @Override public void onDestroy(){if(running.get()==this)running=new WeakReference<>(null);if(session!=null){session.setActive(false);session.release();session=null;}Diagnostics.event("Media card service disconnected");super.onDestroy();}
+ @Override public void onDestroy(){if(running.get()==this)running=new WeakReference<>(null);if(session!=null){session.setActive(false);Diagnostics.event("Media card observation=session-inactive");session.release();session=null;}Diagnostics.event("Media card service disconnected");super.onDestroy();}
 }

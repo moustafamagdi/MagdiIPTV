@@ -59,6 +59,6 @@ final class CarController {
   long sequence=state.optLong("sequence",-1);if(sequence<=lastSequence)return "stale-sequence";
   JSONObject reported=state.optJSONObject("item");
   if(selection==null?reported!=null:reported==null||!selection.optString("id").equals(reported.optString("id"))||!selection.optString("type").equals(reported.optString("type")))return "media-mismatch";
-  lastSequence=sequence;lastReport=android.os.SystemClock.elapsedRealtime();revision++;playback=state;return "accepted";
+  lastSequence=sequence;lastReport=android.os.SystemClock.elapsedRealtime();revision++;CarUiDiagnostics.player(state);playback=state;return "accepted";
  }
 }

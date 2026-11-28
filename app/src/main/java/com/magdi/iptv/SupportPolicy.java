@@ -11,6 +11,8 @@ final class SupportPolicy {
   m=Pattern.compile("^IPTV provider connect failed=([0-9]|10|[1-5][0-9]{2})$").matcher(s);
   if(m.matches())return o.put("kind","provider-connect").put("state","failed").put("code",Integer.parseInt(m.group(1)));
   if(s.startsWith("Process started; version="))return o.put("kind","app-start");
+  if(s.startsWith("Car UI observation=")){Matcher ui=Pattern.compile("^Car UI observation=(launch-tap|launch-pending|already-visible|start|resume|pause|stop|focus-gained|focus-lost|window-visible|window-hidden|fullscreen-on|fullscreen-off|fill-on|fill-off|user-marker); flags=([0-9]{1,2})$").matcher(s);if(!ui.matches())return null;int flags=Integer.parseInt(ui.group(2));if(flags>31)return null;return o.put("kind","car-ui").put("state",ui.group(1)).put("code",flags);}
+  if(s.matches("Media card observation=(session-active|session-inactive|none|playing|paused|stopped|buffering|error)"))return o.put("kind","media-card").put("state",s.substring("Media card observation=".length()));
   if(s.matches("Car UI launch result=(opened|timeout|denied|unavailable|cancelled)"))return o.put("kind","car-launch").put("state",s.substring(s.indexOf('=')+1));
   if(s.equals("Car UI launch requested: existing host")||s.equals("Car UI launch requested: SDK"))return o.put("kind","car-launch").put("state","requested").put("method",s.endsWith("SDK")?"sdk":"host");
   if(s.equalsIgnoreCase("Car view created")||s.equals("Car playback session created"))return o.put("kind","car-open");

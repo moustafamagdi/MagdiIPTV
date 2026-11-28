@@ -189,7 +189,8 @@ public final class PlayerView extends FrameLayout {
  boolean isCarView(){return !phone;}
  private void schedulePicture(){if(!active||closed||covered)return;timer.removeCallbacks(repaint);timer.post(repaint);timer.postDelayed(repaint,250);timer.postDelayed(repaint,900);}
  private void refreshPicture(){if(closed||!active||covered||!isAttachedToWindow()||!isShown())return;web.onResume();web.requestLayout();web.postInvalidateOnAnimation();if(fullscreen!=null)fullscreen.postInvalidateOnAnimation();web.evaluateJavascript("window.dispatchEvent(new Event('resize'))",null);web.postVisualStateCallback(android.os.SystemClock.uptimeMillis(),new WebView.VisualStateCallback(){public void onComplete(long id){if(!closed&&active&&!covered)web.postInvalidateOnAnimation();}});}
- @Override public void onWindowFocusChanged(boolean focus){if(!focus&&web!=null&&background)cover();super.onWindowFocusChanged(focus);if(focus&&web!=null){schedulePicture();timer.postDelayed(()->tryResume(),300);}}
+ @Override protected void onWindowVisibilityChanged(int visibility){super.onWindowVisibilityChanged(visibility);if(!phone)CarUiDiagnostics.event(visibility==VISIBLE?"window-visible":"window-hidden");}
+ @Override public void onWindowFocusChanged(boolean focus){if(!focus&&web!=null&&background)cover();super.onWindowFocusChanged(focus);if(!phone)CarUiDiagnostics.event(focus?"focus-gained":"focus-lost");if(focus&&web!=null){schedulePicture();timer.postDelayed(()->tryResume(),300);}}
  private void showFullscreen(View v,WebChromeClient.CustomViewCallback cb){
   if(fullscreen!=null){cb.onCustomViewHidden();return;}web.evaluateJavascript("window.app&&window.app.fullscreen(false)",null);fullscreenCallback=cb;
   fullscreen=new FrameLayout(getContext()){@Override public void dispatchWindowVisibilityChanged(int visibility){if(visibility!=VISIBLE&&background&&!closed)cover();super.dispatchWindowVisibilityChanged(background&&!closed?VISIBLE:visibility);}};
