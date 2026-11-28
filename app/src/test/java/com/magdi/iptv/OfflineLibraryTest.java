@@ -16,6 +16,22 @@ import static org.junit.Assert.*;
 public class OfflineLibraryTest {
  Context context;OfflineLibrary library;
  @Before public void setup(){context=RuntimeEnvironment.getApplication();context.getSharedPreferences("offline_library",0).edit().clear().commit();library=new OfflineLibrary(context);}
+ @Test public void explicitNetworkConsentSurvivesRetryWithoutChangingDefaults()throws Exception{
+  context.getSharedPreferences("iptv",0).edit().putBoolean("offlineMetered",false).commit();
+  JSONObject item=new JSONObject().put("id","909").put("type","vod").put("name","Consent test").put("ext","mp4");
+  library.enqueue("qa","https://example.invalid/test.mp4",item,true);
+  JSONObject index=new JSONObject(context.getSharedPreferences("offline_library",0).getString("index","{}"));
+  String token=index.keys().next();JSONObject row=index.getJSONObject(token);
+  assertTrue(row.getBoolean("metered"));assertFalse(context.getSharedPreferences("iptv",0).getBoolean("offlineMetered",true));
+  android.app.DownloadManager dm=(android.app.DownloadManager)context.getSystemService(Context.DOWNLOAD_SERVICE);
+  assertTrue(Shadows.shadowOf(Shadows.shadowOf(dm).getRequest(row.getLong("download"))).getAllowedOverMetered());
+  library.action(token,"cancel");new OfflineLibrary(context).action(token,"retry");
+  index=new JSONObject(context.getSharedPreferences("offline_library",0).getString("index","{}"));
+  assertTrue(Shadows.shadowOf(Shadows.shadowOf(dm).getRequest(index.getJSONObject(token).getLong("download"))).getAllowedOverMetered());
+  library.enqueue("qa","https://example.invalid/test.m3u8",item.put("id","910").put("ext","m3u8"),false);
+  index=new JSONObject(context.getSharedPreferences("offline_library",0).getString("index","{}"));
+  for(Iterator<String> it=index.keys();it.hasNext();){JSONObject entry=index.getJSONObject(it.next());if(entry.getString("ext").equals("m3u8")){assertFalse(entry.getBoolean("metered"));assertFalse(Shadows.shadowOf(Shadows.shadowOf(dm).getRequest(entry.getLong("download"))).getAllowedOverMetered());}}
+ }
  @Test public void rangeSupportsSeekSuffixAndRejectsInvalidRanges(){
   assertArrayEquals(new long[]{20,99},OfflineLibrary.range("bytes=20-",100));
   assertArrayEquals(new long[]{90,99},OfflineLibrary.range("bytes=-10",100));

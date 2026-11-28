@@ -21,6 +21,9 @@ final class OfflineLibrary {
  static String extension(String ext){String e=ext.toLowerCase(Locale.ROOT);if(!Arrays.asList("mp4","m4v","webm","mkv","ts","m3u8").contains(e))throw new IllegalArgumentException("Unsupported download format");return e;}
  private File file(JSONObject row) throws Exception {String id=row.getString("token");if(!id.matches("[a-f0-9-]{36}"))throw new IOException();return new File(directory(),id+"."+extension(row.getString("ext")));}
  JSONObject enqueue(String account,String url,JSONObject item) throws Exception {
+  return enqueue(account,url,item,context.getSharedPreferences("iptv",0).getBoolean("offlineMetered",false));
+ }
+ JSONObject enqueue(String account,String url,JSONObject item,boolean metered) throws Exception {
   synchronized(LOCK){
    String ext=extension(item.optString("ext","mp4")),type=item.getString("type"),id=item.getString("id");
    if(!Arrays.asList("vod","episode").contains(type)||!id.matches("[0-9]+"))throw new IllegalArgumentException();
@@ -31,7 +34,7 @@ final class OfflineLibrary {
    JSONObject row=new JSONObject().put("token",token).put("key",key).put("ext",ext).put("type",type)
     .put("name",shortText(item.optString("name","Video"))).put("group",shortText(item.optString("group","")))
     .put("groupKey",account+":"+item.optString("group",""))
-    .put("url",url).put("metered",context.getSharedPreferences("iptv",0).getBoolean("offlineMetered",false)).put("state","queued").put("created",System.currentTimeMillis());
+    .put("url",url).put("metered",metered).put("state","queued").put("created",System.currentTimeMillis());
    // Persist intent before enqueue. A crash here leaves a retryable item, never a false completion.
    data.put(token,row);save(data);
    try{row.put("download",start(row));save(data);}catch(Exception failure){row.put("state","failed");save(data);throw failure;}
@@ -44,7 +47,7 @@ final class OfflineLibrary {
   DownloadManager.Request request=new DownloadManager.Request(uri)
    .setTitle("MM IPTV · "+row.getString("name")).setDescription("Offline download / تنزيل للمشاهدة بدون إنترنت")
    .setDestinationUri(Uri.fromFile(file(row))).setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-   .setAllowedOverMetered(context.getSharedPreferences("iptv",0).getBoolean("offlineMetered",false))
+   .setAllowedOverMetered(row.optBoolean("metered",false))
    .setAllowedOverRoaming(false).addRequestHeader("User-Agent","VLC/3.0.18 LibVLC/3.0.18");
   return manager.enqueue(request);
  }

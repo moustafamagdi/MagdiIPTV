@@ -76,7 +76,7 @@ final class Portal {
      JSONObject item=selection.getJSONObject(n);String type=item.getString("type"),id=item.getString("id"),ext=OfflineLibrary.extension(item.optString("ext","mp4"));
      if(!Arrays.asList("vod","episode").contains(type)||!id.matches("[0-9]+"))throw new IllegalArgumentException();
      String url=validHost(a.getString("host"))+"/"+(type.equals("vod")?"movie":"series")+"/"+enc(a.getString("username"))+"/"+enc(a.getString("password"))+"/"+id+"."+ext;
-     if(library.enqueue(profiles.activeId(),url,item).getBoolean("added"))added++;else skipped++;
+     if(library.enqueue(profiles.activeId(),url,item,args.optBoolean("metered",context.getSharedPreferences("iptv",0).getBoolean("offlineMetered",false))).getBoolean("added"))added++;else skipped++;
     }catch(Exception rejected){failed++;}
     return new JSONObject().put("added",added).put("skipped",skipped).put("failed",failed);
    }

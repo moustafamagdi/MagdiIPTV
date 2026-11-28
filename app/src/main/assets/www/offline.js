@@ -3,6 +3,8 @@ Object.assign(strings.en,{offlineHelp:'Download information',downloads:'Download
 Object.assign(strings.ar,{offlineHelp:'معلومات التنزيل',downloads:'التنزيلات',download:'تنزيل',downloadSeason:'تنزيل الموسم الحالي',startFullscreen:'بدء التشغيل بملء الشاشة على العربية',allowMetered:'السماح للتنزيلات الجديدة ببيانات الهاتف والهوت سبوت المحدود',offlineHint:'النسخة التجريبية تدعم ملفات MP4 وWebM المباشرة. الملفات المكتملة تعمل بدون السيرفر. حذف التطبيق يزيل تنزيلاته. أندرويد يستكمل التنزيل المتقطع حسب دعم السيرفر.',offlineEmpty:'لا توجد تنزيلات. اختر تنزيل بجانب فيلم أو حلقة.',offlineReady:'جاهز بدون إنترنت',offlineQueued:'في الانتظار',offlineDownloading:'جارٍ التنزيل',offlineWaiting:'بانتظار الشبكة أو إعادة محاولة أندرويد',offlineFailed:'فشل التنزيل — حاول مجددًا',offlineInvalid:'السيرفر لم يُرجع ملف فيديو مدعومًا',offlineMissing:'الملف غير موجود',offlineCancelled:'تم الإلغاء',offlineDelete:'حذف',offlineCancel:'إلغاء التنزيل',offlineRetry:'تنزيل مجددًا',offlineConfirmDelete:'حذف هذا التنزيل وملفه من الهاتف؟',offlineConfirmSeason:'إضافة هذه الحلقات للتنزيل؟ قد تحتاج مساحة كبيرة. الحلقات الموجودة بقائمة التنزيلات لن تتكرر.',offlineAdded:'تمت الإضافة',offlineSkipped:'موجود بالفعل',offlineRejected:'لم يُضف أو غير مدعوم',offlineError:'تعذر إكمال العملية. راجع المساحة وحاول مجددًا.',offlineStorage:'المستخدم / المتاح',offlinePhone:'إدارة التنزيلات من الموبايل.',offlineLimit:'اختر موسمًا لا يزيد عن ٢٠٠ حلقة.',offlineConfirmDownload:'تنزيل هذا العنوان للمشاهدة بدون إنترنت؟ التنزيل يستخدم مساحة واتصال الشبكة المسموح به.'});
 Object.assign(strings.en,{offlineHint:'Direct MP4, WebM, MKV and TS, plus finite unencrypted HLS with TS segments. Playback depends on device codecs. HLS segments stay together as one offline title. Uninstalling removes downloads.',downloadUnavailable:'Download unavailable',unsupportedFormat:'This format is not supported for offline download:',unsupportedSource:'Offline downloads require an Xtream movie or episode.',hlsLive:'Only complete HLS videos can be downloaded, not live streams.',hlsEncrypted:'Encrypted HLS downloads are not supported.',hlsLayout:'This HLS playlist structure is not supported. Use a direct file or a finite TS media playlist.',hlsSegment:'An HLS segment was not a valid TS video file.',offlineCodec:'This device could not play this video encoding. The downloaded file was kept.',seasonCount:'Available episodes',offlineCompatibility:'MKV / TS playback depends on device audio and video codecs. HLS must be a complete, unencrypted TS playlist.'});
 Object.assign(strings.ar,{offlineHint:'ندعم ملفات MP4 وWebM وMKV وTS، وقوائم HLS المكتملة غير المشفرة بمقاطع TS. التشغيل حسب ترميز الجهاز. المقاطع تظهر كعنوان أوفلاين واحد. حذف التطبيق يزيل التنزيلات.',downloadUnavailable:'التنزيل غير متاح',unsupportedFormat:'الصيغة دي غير مدعومة للتنزيل حاليًا:',unsupportedSource:'التنزيل متاح لأفلام وحلقات حساب Xtream.',hlsLive:'التنزيل متاح لفيديو HLS مكتمل، وليس البث المباشر.',hlsEncrypted:'تنزيل HLS المشفّر غير مدعوم.',hlsLayout:'تركيب قائمة HLS دي غير مدعوم. استخدم ملفًا مباشرًا أو قائمة مكتملة بمقاطع TS.',hlsSegment:'أحد المقاطع لم يكن ملف فيديو TS صالحًا.',offlineCodec:'الجهاز لم يتمكن من تشغيل ترميز الفيديو ده. الملف المحمّل ما زال محفوظًا.',seasonCount:'الحلقات المتاحة',offlineCompatibility:'تشغيل MKV وTS يعتمد على ترميز الصوت والصورة في جهازك. HLS لازم يكون مكتملًا وغير مشفر وبمقاطع TS.'});
+Object.assign(strings.en,{downloadAnyNetwork:'Download using Wi-Fi or mobile data',downloadWifiOnly:'Download on unmetered Wi-Fi only',downloadNetworkHint:'Choose a connection for these downloads. Mobile data charges may apply. This choice does not change other downloads.',downloadCancel:'Cancel'});
+Object.assign(strings.ar,{downloadAnyNetwork:'تنزيل باستخدام الواي فاي أو بيانات الهاتف',downloadWifiOnly:'تنزيل على واي فاي غير محدود فقط',downloadNetworkHint:'اختار الاتصال للتنزيلات دي. استخدام بيانات الهاتف قد يستهلك الباقة. الاختيار مش بيغيّر باقي التنزيلات.',downloadCancel:'إلغاء'});
 window.Offline=(()=>{
  let selected=false,refreshing=false,operation=false,snapshot=null;
  const active=()=>selected&&source==='offline';
@@ -34,9 +36,23 @@ window.Offline=(()=>{
  }
  async function open(){if(!$('offline-dialog').open)$('offline-dialog').showModal();$('offline-status').textContent='';await refresh();}
  async function action(row,action){if(operation)return;operation=true;try{await api('downloadaction',{token:row.token,action});await refresh();}catch{$('offline-status').textContent=t('offlineError');}finally{operation=false;}}
+ function chooseNetwork(summary){return new Promise(resolve=>{
+  const dialog=document.createElement('dialog');dialog.className='offline-network-choice';
+  const title=document.createElement('h2');title.textContent=t('download');title.id='offline-network-title';dialog.setAttribute('aria-labelledby',title.id);
+  const detail=document.createElement('p');detail.textContent=summary;
+  const hint=document.createElement('p');hint.textContent=t('downloadNetworkHint');
+  let result=null;dialog.append(title,detail,hint,
+   button(t('downloadAnyNetwork'),()=>{result=true;dialog.close();}),
+   button(t('downloadWifiOnly'),()=>{result=false;dialog.close();}),
+   button(t('downloadCancel'),()=>dialog.close()));
+  dialog.addEventListener('close',()=>{dialog.remove();resolve(result);},{once:true});
+  document.body.append(dialog);dialog.showModal();
+ });}
  async function enqueue(list){if(operation||!Controller.isPhone())return;const rejected=list.filter(i=>!supported(i));list=list.filter(supported);if(!list.length){notice(rejected.length?reason(rejected[0]):t('offlineLimit'));return;}if(!list.length||list.length>200){notice(t('offlineLimit'));return;}
-  if(!confirm(t(list.length>1?'offlineConfirmSeason':'offlineConfirmDownload')+'\n'+list.length+' · '+list[0].name+(rejected.length?'\n'+t('offlineRejected')+': '+rejected.length:'')+'\n'+t('offlineCompatibility')))return;
-  operation=true;try{const result=await api('download',{account:account.activeId,items:list.map(i=>({id:i.id,name:i.name,type:i.type,ext:i.ext||'mp4',group:i.group||''}))});
+  const accountId=account.activeId;operation=true;
+  try{const metered=await chooseNetwork(t(list.length>1?'offlineConfirmSeason':'offlineConfirmDownload')+'\n'+list.length+' · '+list[0].name+(rejected.length?'\n'+t('offlineRejected')+': '+rejected.length:'')+'\n'+t('offlineCompatibility'));
+   if(metered===null||account.activeId!==accountId)return;
+   const result=await api('download',{account:accountId,metered,items:list.map(i=>({id:i.id,name:i.name,type:i.type,ext:i.ext||'mp4',group:i.group||''}))});
    for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();await open();$('offline-status').textContent=t('offlineAdded')+': '+result.added+' · '+t('offlineSkipped')+': '+result.skipped+' · '+t('offlineRejected')+': '+result.failed;
   }catch{notice(t('offlineError'));}finally{operation=false;}
  }
