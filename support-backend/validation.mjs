@@ -1,8 +1,30 @@
+const playbackContextStates=new Set(['background-enabled','background-disabled','interruption-start','interruption-end','resume-wanted','resume-not-wanted','resume-expired','resume-deferred','resume-requested']);
+function validatePlaybackContext(e,app){
+ if(!['tube','iptv'].includes(app)||!Number.isSafeInteger(e.at)||e.at<0||!playbackContextStates.has(e.state)||Object.keys(e).length!==3)throw Error('playback-context');
+ return e;
+}
+const carUiStates=new Set(["launch-tap","launch-pending","already-visible","start","resume","pause","stop","focus-gained","focus-lost","window-visible","window-hidden","fullscreen-on","fullscreen-off","fill-on","fill-off","user-marker"]);
+const mediaCardStates=new Set(["session-active","session-inactive","none","playing","paused","stopped","buffering","error"]);
+function validateObservation(e,app){
+ if(!['tube','iptv'].includes(app)||!Number.isSafeInteger(e.at)||e.at<0)throw Error('observation');
+ const ui=e.kind==='car-ui',keys=ui?['at','kind','state','code']:['at','kind','state'];
+ if(Object.keys(e).length!==keys.length||Object.keys(e).some(k=>!keys.includes(k)))throw Error('observation');
+ if(!(ui?carUiStates:mediaCardStates).has(e.state)||(ui&&(!Number.isInteger(e.code)||e.code<0||e.code>31)))throw Error('observation');
+ return e;
+}
 const kinds=new Set(['media','app-start','car-open','car-disconnected','audio-browser','install-check','http-error','network-error','provider-connect','controller','background-unavailable','crash','download','install','release-check','repair','permission']);
 const states=new Set(('play pause waiting playing error ended telemetry fullscreen video-frozen video-recovery-start video-recovery-failed video-recovery-complete seek-start seek-retry seek-failed seek-complete match mismatch unknown UnknownHostException SocketException SocketTimeoutException SSLHandshakeException IOException accepted current-loading media-mismatch request-mismatch connection-mismatch sample-unavailable helper-unavailable stale document-mismatch disconnected started ready failed cancelled pending finished expired unavailable not-installed').split(' '));
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const versions=/^(?:unknown|[0-9][a-zA-Z0-9._-]{0,63})$/;
 const numbers=new Set(['at','time','ready','frames','code','dropped','sampleDelayMs','callbackMs','appJavaHeapMiB']);
+function validateCarLaunch(e, app) {
+ if(!['tube','iptv'].includes(app)||!Number.isSafeInteger(e.at)||e.at<0)throw Error('car-launch');
+ const requested=e.state==='requested';
+ const keys=requested?['at','kind','state','method']:['at','kind','state'];
+ if(Object.keys(e).length!==keys.length||Object.keys(e).some(k=>!keys.includes(k)))throw Error('car-launch');
+ if(requested?!['host','sdk'].includes(e.method):!['opened','timeout','denied','unavailable','cancelled'].includes(e.state))throw Error('car-launch');
+ return e;
+}
 export function validate(input){
  if(!input||Object.keys(input).some(k=>!['schema','action','app','support_id','batch','environment','events','device_id','device_token'].includes(k)))throw Error('shape');
  if(input.schema!==1||!['iptv','tube','auto'].includes(input.app)||!uuid.test(input.support_id)||!['upload','delete'].includes(input.action))throw Error('shape');
@@ -17,6 +39,6 @@ export function validate(input){
  if(!/^(samsung|xiaomi|google|huawei|honor|oppo|vivo|oneplus|motorola|sony|realme|nothing|asus|nokia|other)$/.test(environment.manufacturer))throw Error('manufacturer');
  if(typeof environment.model!=='string'||!/^[a-zA-Z0-9 _().-]{1,48}$/.test(environment.model))throw Error('model');
  for(const k of ['installer','initiator'])if(!['play','google','android','samsung','xiaomi','other','unknown'].includes(environment[k]))throw Error('installer');
- const events=input.events.map(e=>{if(!e||!kinds.has(e.kind)||!Number.isSafeInteger(e.at)||e.at<0)throw Error('event');if(e.kind==='provider-connect'&&(input.app!=='iptv'||e.state!=='failed'||!Number.isInteger(e.code)||e.code<0||(e.code>10&&(e.code<100||e.code>599))||Object.keys(e).length!==4))throw Error('provider-connect');for(const [k,v] of Object.entries(e)){if(k==='kind')continue;if(k==='target'){if(!['auto','iptv','tube'].includes(v))throw Error('target');}else if(k==='method'){if(!['classic','shizuku','root','unknown'].includes(v))throw Error('method');}else if(k==='version'){if(!versions.test(v))throw Error('version');}else if(k==='installer'||k==='initiator'){if(!['play','google','android','samsung','xiaomi','shell','other','unknown'].includes(v))throw Error('installer');}else if(k==='state'){if(!states.has(v))throw Error('state');}else if(!numbers.has(k)||!Number.isSafeInteger(v)||v< -10000||v>10000000000000)throw Error('field');}return e;});
+ const events=input.events.map(e=>{if(e?.kind==='playback-context')return validatePlaybackContext(e,input.app);if(e?.kind==='car-ui'||e?.kind==='media-card')return validateObservation(e,input.app);if(e?.kind==='car-launch')return validateCarLaunch(e,input.app);if(!e||!kinds.has(e.kind)||!Number.isSafeInteger(e.at)||e.at<0)throw Error('event');if(e.kind==='provider-connect'&&(input.app!=='iptv'||e.state!=='failed'||!Number.isInteger(e.code)||e.code<0||(e.code>10&&(e.code<100||e.code>599))||Object.keys(e).length!==4))throw Error('provider-connect');for(const [k,v] of Object.entries(e)){if(k==='kind')continue;if(['muted','resumeWanted','fullscreen','visible'].includes(k)){if(e.kind!=='media'||typeof v!=='boolean')throw Error('media-boolean');continue;}if(['waiting','stalled','loads'].includes(k)){if(e.kind!=='media'||!Number.isSafeInteger(v)||v<0||v>1000000000000)throw Error('media-counter');continue;}if(k==='source'||k==='engine'){if(e.kind!=='media'||!(k==='source'?['car','phone']:['native','hls','ts','unknown']).includes(v))throw Error('media-source');continue;}if(k==='target'){if(!['auto','iptv','tube'].includes(v))throw Error('target');}else if(k==='method'){if(!['classic','shizuku','root','adb','unknown'].includes(v))throw Error('method');}else if(k==='version'){if(!versions.test(v))throw Error('version');}else if(k==='installer'||k==='initiator'){if(!['play','google','android','samsung','xiaomi','shell','other','unknown'].includes(v))throw Error('installer');}else if(k==='state'){if(!states.has(v))throw Error('state');}else if(!numbers.has(k)||!Number.isSafeInteger(v)||v< -10000||v>10000000000000)throw Error('field');}return e;});
  return {p_app:input.app,p_id:input.support_id,p_action:'upload',p_batch:input.batch,p_environment:environment,p_events:events,p_device:input.device_id||null,deviceToken:input.device_token||null};
 }
