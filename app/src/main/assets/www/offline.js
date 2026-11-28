@@ -56,7 +56,7 @@ window.Offline=(()=>{
  async function start(row){
   if(launching||operation||!pageOpen)return;const generation=++launchGeneration;launching=true;$('offline-list').setAttribute('aria-busy','true');$('offline-status').textContent=t('offlineSending');
   try{const data=await api('downloads');if(!pageOpen||generation!==launchGeneration)return;const latest=data.items.find(r=>r.token===row.token&&r.state==='ready');if(!latest){$('offline-status').textContent=t('offlineMissingTitle');return;}
-   if(Controller.isPhone()){const accepted=await Controller.select(playable(latest));$('offline-status').textContent=t(accepted?'offlineSent':'carCommandFailed');}
+   if(Controller.isPhone()){const accepted=await Controller.select(playable(latest));if(!pageOpen||generation!==launchGeneration)return;$('offline-status').textContent=t(accepted?'offlineSent':'carCommandFailed');if(accepted)$('controller-panel').scrollIntoView({block:'start',behavior:'instant'});}
    else if(await activate()){selectItem(playable(latest));}
   }catch{$('offline-status').textContent=t('offlineError');}finally{launching=false;$('offline-list').setAttribute('aria-busy','false');}
  }
