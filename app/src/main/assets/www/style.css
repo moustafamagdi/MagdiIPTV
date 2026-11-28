@@ -103,3 +103,7 @@ body.fullscreen #offline-open{display:none}
 .card:has(.offline-download-area){flex-wrap:wrap}.offline-download-area{flex:0 0 100%;padding:8px 12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px}.offline-download-area small{overflow-wrap:anywhere}.offline-download{flex:none;color:var(--accent)}#offline-season-hint{color:var(--muted);margin:8px 0}
 
 .offline-network-choice{width:min(540px,94vw);max-height:90vh;overflow:auto}.offline-network-choice p{white-space:pre-line;overflow-wrap:anywhere}.offline-network-choice button{display:block;width:100%;min-height:48px;margin-block:10px;white-space:normal}
+
+/* Physical left in both languages, beside the 48px exit target. */
+.player-box.full .picture-fit-row{position:fixed;left:54px;right:auto;top:50%;bottom:auto;transform:translateY(-50%);justify-content:flex-start;z-index:4}
+.player-box.full .picture-fit-row button{min-height:48px}
