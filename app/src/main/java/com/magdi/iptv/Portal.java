@@ -54,7 +54,7 @@ final class Portal {
   if("downloads".equals(method))return new OfflineLibrary(context).list();
   if("downloadaction".equals(method))return new OfflineLibrary(context).action(args.getString("token"),args.getString("action"));
   if("downloadsettings".equals(method)){context.getSharedPreferences("iptv",0).edit().putBoolean("offlineMetered",args.getBoolean("metered")).apply();return true;}
-  if("playprefs".equals(method)){if(args.has("fullscreen"))context.getSharedPreferences("iptv",0).edit().putBoolean("startFullscreen",args.getBoolean("fullscreen")).apply();return new JSONObject().put("fullscreen",context.getSharedPreferences("iptv",0).getBoolean("startFullscreen",false));}
+  if("playprefs".equals(method)){if(args.has("fullscreen"))context.getSharedPreferences("iptv",0).edit().putBoolean("startFullscreen",args.getBoolean("fullscreen")).apply();return new JSONObject().put("fullscreen",context.getSharedPreferences("iptv",0).getBoolean("startFullscreen",true));}
   if("offlineplay".equals(method))return new OfflineLibrary(context).play(args.getString("id"));
   if("publicplaylist".equals(method))return publicLists.load(args.getString("preset"));
   if("publicplay".equals(method)){
