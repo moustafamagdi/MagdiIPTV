@@ -61,6 +61,7 @@ public final class PlayerView extends FrameLayout {
     if(!"https".equals(u.getScheme())||!"app.magdi.local".equals(u.getHost()))return StreamProxy.reply(403,"text/plain","External navigation disabled");
     String path=u.getPath();if(path==null)return StreamProxy.reply(404,"text/plain","");
     if(path.startsWith("/artwork/")&&"GET".equals(r.getMethod()))return artwork.open(path.substring(9));
+    if(path.startsWith("/offline/"))return phone||!"GET".equals(r.getMethod())?StreamProxy.reply(403,"text/plain","Phone is a controller only"):new OfflineLibrary(c).open(path.substring(9),r.getRequestHeaders());
     if(path.startsWith("/media/"))return phone?StreamProxy.reply(403,"text/plain","Phone is a controller only"):proxy.open(path.substring(7),r.getRequestHeaders());
     if(path.contains("..")||path.contains("%")||!"GET".equals(r.getMethod()))return StreamProxy.reply(403,"text/plain","");
     if(path.equals("/"))path="/index.html";
@@ -80,7 +81,7 @@ public final class PlayerView extends FrameLayout {
  private final class Bridge {
   @JavascriptInterface public void request(String id,String method,String payload){
    if(closed||id==null||!id.matches("[0-9]{1,12}"))return;
-   if(Arrays.asList("controlleropen","controllerstate","controllercommand","ready","playerbegin","carstop","play","publicplay").contains(method)){
+   if(Arrays.asList("controlleropen","controllerstate","controllercommand","ready","playerbegin","carstop","play","publicplay","offlineplay").contains(method)){
     timer.post(()->{
      if(closed)return;
      try{
@@ -120,7 +121,7 @@ public final class PlayerView extends FrameLayout {
      else if("background".equals(method)){boolean enabled=args.getBoolean("enabled");getContext().getSharedPreferences("iptv",0).edit().putBoolean("backgroundAudio",enabled).apply();timer.post(()->{background=enabled;if(!enabled)PlaybackService.release(PlayerView.this);});value=enabled;}
      else if("logs".equals(method)||"copyLogs".equals(method)||"logSessions".equals(method)){boolean ar="ar".equals(args.optString("language","ar"));timer.post(()->{if(phone)Diagnostics.open((android.app.Activity)getContext(),ar);});value=true;}
      else if("setup".equals(method)){String language=args.optString("language","ar");timer.post(()->{if(phone)getContext().startActivity(new Intent(getContext(),InstallSetupActivity.class).putExtra("language",language));});value=true;}
-     else {value=portal.call(method,args);if("save".equals(method)||"forget".equals(method)||"switchAccount".equals(method)||("restoreAccount".equals(method)&&Boolean.TRUE.equals(value)))timer.post(CarController::accountChanged);}
+     else {if(!phone&&Arrays.asList("download","downloadaction","downloadsettings").contains(method))throw new IllegalStateException();value=portal.call(method,args);if("save".equals(method)||"forget".equals(method)||"switchAccount".equals(method)||("restoreAccount".equals(method)&&Boolean.TRUE.equals(value)))timer.post(CarController::accountChanged);}
      answer.put("ok",true).put("value",value==null?JSONObject.NULL:value);
     }catch(Exception e){if("connect".equals(method))Diagnostics.event("IPTV provider connect failed="+Portal.connectionFailure(e));try{answer.put("ok",false).put("error",safeError(e));}catch(JSONException ignored){}Diagnostics.event(surface+" request="+(method!=null&&method.matches("[a-z]{1,20}")?method:"unknown")+" failed="+e.getClass().getSimpleName());}
     String encoded=answer.toString();timer.post(()->{if(!closed)web.evaluateJavascript("window.nativeReply("+id+","+encoded+")",null);});

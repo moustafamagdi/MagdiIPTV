@@ -12,10 +12,11 @@ import java.util.*;
 /** Adapt IPTVnator's embedded backend without passing account credentials to the page. */
 final class Portal {
  private final AccountStore store;
+ private final Context context;
  private final WebBackend backend=new WebBackend(new HttpFetcher(),"/api");
  private final StreamProxy streams;
  private final PublicPlaylists publicLists=new PublicPlaylists(this::loadPlaylist);
- Portal(Context c,StreamProxy p){store=new AccountStore(c);streams=p;}
+ Portal(Context c,StreamProxy p){context=c.getApplicationContext();store=new AccountStore(c);streams=p;}
  static String enc(String value){try{return URLEncoder.encode(value,"UTF-8").replace("+","%20");}catch(java.io.UnsupportedEncodingException e){throw new IllegalStateException(e);}}
  static String validHost(String text){URI u=URI.create(text.trim());if(!("http".equals(u.getScheme())||"https".equals(u.getScheme()))||u.getHost()==null||u.getRawUserInfo()!=null||u.getFragment()!=null)throw new IllegalArgumentException("Enter a valid HTTP or HTTPS server address");return text.trim().replaceAll("/+$","");}
  // Scheme-less addresses are valid input; HTTPS is their first transport.
@@ -50,6 +51,11 @@ final class Portal {
   return payload;
  }
  Object call(String method,JSONObject args) throws Exception {
+  if("downloads".equals(method))return new OfflineLibrary(context).list();
+  if("downloadaction".equals(method))return new OfflineLibrary(context).action(args.getString("token"),args.getString("action"));
+  if("downloadsettings".equals(method)){context.getSharedPreferences("iptv",0).edit().putBoolean("offlineMetered",args.getBoolean("metered")).apply();return true;}
+  if("playprefs".equals(method)){if(args.has("fullscreen"))context.getSharedPreferences("iptv",0).edit().putBoolean("startFullscreen",args.getBoolean("fullscreen")).apply();return new JSONObject().put("fullscreen",context.getSharedPreferences("iptv",0).getBoolean("startFullscreen",false));}
+  if("offlineplay".equals(method))return new OfflineLibrary(context).play(args.getString("id"));
   if("publicplaylist".equals(method))return publicLists.load(args.getString("preset"));
   if("publicplay".equals(method)){
    String url=publicLists.selected(args.getString("preset"),args.getString("url"));
@@ -62,6 +68,18 @@ final class Portal {
   synchronized (AccountStore.class) { profiles=new AccountProfiles(store.read()); }
   JSONObject a=profiles.current();
   switch(method){
+   case "download": {
+    if(!profiles.activeId().equals(args.getString("account"))||"m3u".equals(a.optString("mode")))throw new IllegalArgumentException();
+    JSONArray selection=args.getJSONArray("items");if(selection.length()<1||selection.length()>200)throw new IllegalArgumentException();
+    int added=0,skipped=0,failed=0;OfflineLibrary library=new OfflineLibrary(context);
+    for(int n=0;n<selection.length();n++)try{
+     JSONObject item=selection.getJSONObject(n);String type=item.getString("type"),id=item.getString("id"),ext=OfflineLibrary.extension(item.optString("ext","mp4"));
+     if(!Arrays.asList("vod","episode").contains(type)||!id.matches("[0-9]+"))throw new IllegalArgumentException();
+     String url=validHost(a.getString("host"))+"/"+(type.equals("vod")?"movie":"series")+"/"+enc(a.getString("username"))+"/"+enc(a.getString("password"))+"/"+id+"."+ext;
+     if(library.enqueue(profiles.activeId(),url,item).getBoolean("added"))added++;else skipped++;
+    }catch(Exception rejected){failed++;}
+    return new JSONObject().put("added",added).put("skipped",skipped).put("failed",failed);
+   }
    case "connect": return connect(a,profiles.activeId(),args);
    case "catalog": {
     String type=args.optString("type","live"),action;
