@@ -99,3 +99,5 @@ html:has(dialog[open]),html:has(dialog[open]) body{overflow:hidden;overscroll-be
 body.fullscreen #offline-open{display:none}
 
 #offline-dialog .dialog-header{gap:8px}#offline-dialog .dialog-header h2{min-width:0;overflow-wrap:anywhere;font-size:1.2rem}#offline-close{flex:0 0 44px;padding:8px;min-width:44px}#offline-dialog details{margin-block:12px}#offline-space{overflow-wrap:anywhere}
+
+.card:has(.offline-download-area){flex-wrap:wrap}.offline-download-area{flex:0 0 100%;padding:8px 12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px}.offline-download-area small{overflow-wrap:anywhere}.offline-download{flex:none;color:var(--accent)}#offline-season-hint{color:var(--muted);margin:8px 0}

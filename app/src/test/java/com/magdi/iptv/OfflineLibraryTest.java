@@ -45,12 +45,22 @@ public class OfflineLibraryTest {
   assertEquals("missing",library.list().getJSONArray("items").getJSONObject(0).getString("state"));
   try{library.play(token);fail();}catch(IOException expected){}
  }
+ @Test public void mkvAndTsHeadersAndMimeTypesAreDistinct()throws Exception{
+  File f=File.createTempFile("formats",".bin",context.getCacheDir());try{byte[] b=new byte[565];b[0]=0x47;b[188]=0x47;b[376]=0x47;java.nio.file.Files.write(f.toPath(),b);assertTrue(OfflineLibrary.validHeader(f,"ts"));assertFalse(OfflineLibrary.validHeader(f,"mkv"));b[0]=0x1a;b[1]=0x45;b[2]=(byte)0xdf;b[3]=(byte)0xa3;java.nio.file.Files.write(f.toPath(),b);assertTrue(OfflineLibrary.validHeader(f,"mkv"));assertFalse(OfflineLibrary.validHeader(f,"ts"));assertEquals("video/x-matroska",OfflineLibrary.mime("mkv"));assertEquals("video/mp2t",OfflineLibrary.mime("ts"));}finally{f.delete();}
+ }
+ @Test public void hlsBundleSurvivesRecreationAndDeletionRemovesSegments()throws Exception {
+  String token=UUID.randomUUID().toString();File dir=new File(context.getExternalFilesDir(null),"offline");dir.mkdirs();File segment=OfflineHls.part(dir,token,0);java.nio.file.Files.write(segment.toPath(),new byte[565]);
+  JSONObject row=new JSONObject().put("token",token).put("ext","m3u8").put("state","ready").put("playlist","#EXTM3U\n#EXTINF:1,\n"+StreamProxy.ORIGIN+"/offline/"+token+"/0\n#EXT-X-ENDLIST\n").put("segments",new JSONArray().put(new JSONObject().put("ready",true).put("bytes",565)));
+  context.getSharedPreferences("offline_library",0).edit().putString("index",new JSONObject().put(token,row).toString()).commit();
+  OfflineLibrary restored=new OfflineLibrary(context);assertEquals("ready",restored.list().getJSONArray("items").getJSONObject(0).getString("state"));WebResourceResponse local=restored.open(token+"/0",Collections.emptyMap());assertEquals(200,local.getStatusCode());local.getData().close();assertEquals(404,restored.open(token+"/../0",Collections.emptyMap()).getStatusCode());restored.action(token,"delete");assertFalse(segment.exists());assertFalse(new File(dir,token+".m3u8").exists());
+ }
  @Test public void duplicateSelectionIsAccountScopedAndLiveIsRejected()throws Exception{
   JSONObject item=new JSONObject().put("id","123").put("type","vod").put("name","Movie").put("ext","mp4");
   assertTrue(library.enqueue("account-a","https://example.invalid/movie.mp4",item).getBoolean("added"));
   assertFalse(library.enqueue("account-a","https://example.invalid/movie.mp4",item).getBoolean("added"));
   assertTrue(library.enqueue("account-b","https://example.invalid/movie.mp4",item).getBoolean("added"));
   try{library.enqueue("account-a","https://example.invalid/live.mp4",item.put("type","live"));fail();}catch(IllegalArgumentException expected){}
-  for(String unsupported:new String[]{"m3u8","mpd","../mp4","mkv"})try{OfflineLibrary.extension(unsupported);fail();}catch(IllegalArgumentException expected){}
+  for(String unsupported:new String[]{"mpd","../mp4","avi"})try{OfflineLibrary.extension(unsupported);fail();}catch(IllegalArgumentException expected){}
  }
 }
+
