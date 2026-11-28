@@ -1,0 +1,23 @@
+'use strict';
+const LibraryRefresh=(()=>{
+ const store=new CatalogCache(localStorage),retryAfter=new Map(),episodeCache=new Map();let offered=null,working=null;
+ const eligible=()=>!!source&&source!=='offline'&&!publicSource&&['live','vod','series'].includes(tab);
+ const context=()=>({source,type:tab,category:$('category').value,connection:connectionGeneration,generation:loadGeneration});
+ const valid=c=>source===c.source&&connectionGeneration===c.connection;
+ const visible=c=>valid(c)&&tab===c.type&&$('category').value===c.category&&loadGeneration===c.generation;
+ const scope=c=>c.source+':'+(mode==='m3u'?'playlist':c.type+':'+c.category);
+ function keys(c){return mode==='m3u'?['playlist']:[c.type+':categories',c.type+':'+c.category];}
+ function status(){if(!$('library-status'))return;$('library-refresh-bar').hidden=!eligible();if(!eligible())return;const c=context(),entries=keys(c).map(k=>store.get(c.source,k));const at=entries.every(Boolean)?Math.min(...entries.map(e=>e.at)):0;$('library-status').textContent=at?t('libraryUpdated')+' '+new Date(at).toLocaleString(language==='ar'?'ar':'en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):t('libraryNotUpdated');$('library-apply').hidden=!offered||!visible(offered.context);}
+ async function read(section,request){const s=source,connection=connectionGeneration;return (store.get(s,section)||await store.fetch(s,section,request,()=>source===s&&connectionGeneration===connection)).data;}
+ async function episodes(id){const s=source,connection=connectionGeneration,k=s+':'+id,saved=episodeCache.get(k);if(saved&&Date.now()-saved.at<60000)return saved.data;const data=await api('episodes',{series_id:id});if(!data||typeof data.episodes!=='object'||data.episodes===null)throw new Error('Invalid episodes response');if(source===s&&connectionGeneration===connection){if(episodeCache.size>=12)episodeCache.clear();episodeCache.set(k,{at:Date.now(),data});}return data;}
+ function playlist(data){if(!Array.isArray(data.playlist?.items))throw new Error('Invalid M3U response');return data.playlist.items.map((c,i)=>({id:String(i)+':'+hash(c.url||''),type:'live',name:c.name||'Channel '+(i+1),...Metadata.fields(c),group:c.group?.title||c.group||'',url:c.url,ext:/\.m3u8(?:\?|$)/i.test(c.url||'')?'m3u8':/\.ts(?:\?|$)/i.test(c.url||'')?'ts':'mp4'}));}
+ function apply(){if(!offered||!visible(offered.context)){offered=null;status();return;}const {context:c,results,m3u}=offered,scroll=window.scrollY,limit=shown;offered=null;if(m3u){playlistItems=results[0].data;items=playlistItems;categories=[...new Set(items.map(i=>String(i.group)))].filter(Boolean).map(x=>({category_id:x,category_name:x}));}else{categories=results[0].data;items=results[1].data.map(i=>normalize(i,c.type));}renderCategories();if(c.category&&!Array.from($('category').options).some(o=>o.value===c.category))$('category').add(new Option(c.category,c.category));$('category').value=c.category;EmbeddedSelects.refresh();filter();shown=Math.max(limit,shown);render();window.scrollTo(0,scroll);status();}
+ async function refresh(force=false){status();if(!eligible()||document.hidden||document.body.classList.contains('offline-page-open'))return;const c=context(),id=scope(c),ks=keys(c),m3u=mode==='m3u';if(working&&working.id===id)return;if(!force&&(retryAfter.get(id)>Date.now()||!ks.some(k=>store.stale(store.get(c.source,k)))))return;const job={id};working=job;offered=null;$('library-apply').hidden=true;$('library-status').textContent=t('libraryRefreshing');$('refresh').disabled=true;const before=m3u?playlistItems:items;
+ try{const requests=m3u?[()=>api('playlist').then(playlist)]:[()=>api('catalog',{type:c.type,categories:true}),()=>api('catalog',{type:c.type,category_id:c.category})];const results=await Promise.all(ks.map((k,i)=>store.fetch(c.source,k,requests[i],()=>valid(c))));if(!visible(c))return;retryAfter.delete(id);const next=m3u?results[0].data:results[1].data.map(i=>normalize(i,c.type));const changed=JSON.stringify(before)!==JSON.stringify(next)||(!m3u&&JSON.stringify(categories)!==JSON.stringify(results[0].data));if(changed){offered={context:c,results,m3u};if(force||!before.length)apply();}status();}
+ catch{retryAfter.set(id,Date.now()+60000);if(visible(c)){$('library-status').textContent=t('libraryRefreshFailed');}}
+ finally{if(working===job){working=null;$('refresh').disabled=false;}}
+ }
+ function entered(){offered=null;status();void refresh();}
+ function init(){$('library-apply').onclick=apply;document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh();});setInterval(()=>void refresh(),60000);}
+ return {read,playlist,episodes,refresh,entered,status,init};
+})();

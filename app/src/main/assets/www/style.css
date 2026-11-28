@@ -127,3 +127,7 @@ body.offline-page-open main> :not(#offline-page){display:none!important}
 .offline-seasons{display:flex;flex-wrap:wrap;gap:10px;width:100%}.offline-seasons button{min-height:48px}.offline-seasons .selected{border-color:var(--accent);color:var(--accent)}#offline-path h2{width:100%;margin-bottom:0}
 #offline-page .offline-row>button:not(.offline-pick),#offline-page .offline-manage{font-size:14px;background:transparent;color:var(--muted)}body:not(.controller) .offline-seasons button{min-height:76px;min-width:76px}
 #offline-list[aria-busy=true] .offline-pick{opacity:.65;pointer-events:none}
+
+.library-refresh-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0;color:var(--muted)}.library-refresh-bar button{min-height:48px}.search-row{flex-wrap:wrap}.search-row #refresh{white-space:normal;min-height:48px}body:not(.controller) .library-refresh-bar button{min-height:76px}
+
+.library-schedule{display:block;margin-top:5px;font-size:12px}

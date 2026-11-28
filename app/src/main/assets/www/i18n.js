@@ -8,3 +8,8 @@ strings.ar.fillScreen='بدون حواف';strings.ar.fullPicture='الصورة �
 let language=localStorage.getItem('language')||'ar';
 function t(key){return strings[language][key]||key;}
 function applyLanguage(){document.documentElement.lang=language;document.documentElement.dir=language==='ar'?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=t(e.dataset.i18n));document.querySelectorAll('[data-i18n-label]').forEach(e=>{e.setAttribute('aria-label',t(e.dataset.i18nLabel));e.title=t(e.dataset.i18nLabel);});document.getElementById('language').textContent=language==='ar'?'EN':'عربي';document.getElementById('search').placeholder=t('searchHint');window.dispatchEvent(new Event('mmvideofit'));window.Controller?.refresh();}
+
+Object.assign(strings.ar,{refreshLibrary:'تحديث المكتبة',libraryUpdated:'آخر تحديث للقسم:',libraryNotUpdated:'لم يتم تحديث هذا القسم بعد',libraryRefreshing:'جارٍ تحديث هذا القسم…',libraryRefreshFailed:'تعذّر التحديث. القائمة السابقة ما زالت متاحة؛ حاول مجددًا.',libraryNewContent:'محتوى جديد — عرض'});
+Object.assign(strings.en,{refreshLibrary:'Refresh library',libraryUpdated:'Section last updated:',libraryNotUpdated:'This section has not been updated yet',libraryRefreshing:'Updating this section…',libraryRefreshFailed:'Could not refresh. Your previous list is still available; try again.',libraryNewContent:'New content — Show'});
+
+strings.ar.librarySchedule='يتحدّث القسم تلقائيًا كل ٦ ساعات أثناء الاستخدام.';strings.en.librarySchedule='This section refreshes automatically every 6 hours while in use.';
