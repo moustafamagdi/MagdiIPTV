@@ -4,4 +4,4 @@ Download confirmation now has explicit Wi-Fi/mobile-data and unmetered Wi-Fi-onl
 
 Validation: 167 app unit tests; 21 JavaScript tests; release build and lint passed. Tests cover request metered policy, persisted retry, HLS manifest policy, cancellation, account changes and duplicate taps. Release APK assets match source, official certificate retained, no private account seed or debug harness. No connected phone was available for this fix; real cellular/car testing remains outstanding.
 
-Existing queued downloads retain their original policy; cancel and retry a title with the new network choice if it was queued under Wi-Fi-only. Existing files and accounts are preserved.
+Existing queued downloads retain their original policy; remove and add the title again to choose another network policy. Retrying an existing item keeps its saved policy. Existing files and accounts are preserved.
