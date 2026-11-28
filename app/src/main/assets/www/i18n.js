@@ -13,3 +13,6 @@ Object.assign(strings.ar,{refreshLibrary:'تحديث المكتبة',libraryUpda
 Object.assign(strings.en,{refreshLibrary:'Refresh library',libraryUpdated:'Section last updated:',libraryNotUpdated:'This section has not been updated yet',libraryRefreshing:'Updating this section…',libraryRefreshFailed:'Could not refresh. Your previous list is still available; try again.',libraryNewContent:'New content — Show'});
 
 strings.ar.librarySchedule='يتحدّث القسم تلقائيًا كل ٦ ساعات أثناء الاستخدام.';strings.en.librarySchedule='This section refreshes automatically every 6 hours while in use.';
+
+Object.assign(strings.en,{moreControls:'More controls',seekOnCar:'Seek on car',previous:'Previous',next:'Next',librarySources:'Library sources',libraryFreshness:'Library refresh status',controllerHint:'Choose a title below to play on the car.'});
+Object.assign(strings.ar,{moreControls:'المزيد من التحكم',seekOnCar:'تقديم الفيديو على العربية',previous:'السابق',next:'التالي',librarySources:'مصادر المكتبة',libraryFreshness:'حالة تحديث المكتبة',controllerHint:'اختار محتوى من المكتبة للتشغيل على العربية.'});

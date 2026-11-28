@@ -3,17 +3,19 @@
 window.Controller=(()=>{
  let phone=true,epoch=0,request=0,version=0,beginVersion=0,beginQueue=Promise.resolve(),bound=false,sequence=0,pendingItem=null,last={connected:false,revision:-1,playback:{}},pollSlot=null,pollTicket=0,intent=0,seekDragging=false;
  const isPhone=()=>phone;
- function configure(environment){phone=!!environment.controller;document.body.classList.toggle('controller',phone);$('controller-panel').hidden=!phone;$('background').closest('label').hidden=true;if(phone){v.pause();v.removeAttribute('src');v.load();document.title='MM IPTV Controller';display(last);poll();}}
+ function configure(environment){phone=!!environment.controller;if(!phone)document.querySelector('.top-actions').prepend($('offline-open'));else $('welcome').before($('offline-open'));document.body.classList.toggle('controller',phone);$('controller-panel').hidden=!phone;$('background').closest('label').hidden=true;if(phone){v.pause();v.removeAttribute('src');v.load();document.title='MM IPTV Controller';display(last);poll();}}
  async function openCar(){if(!phone)return;try{await api('controlleropen',{},2500);poll();}catch{notice(t('carOpenUnavailable'));}}
  function alertDisconnected(){notice(t('carRequired'));$('controller-alert-text').textContent=t('carRequired');if(!$('controller-alert').open)$('controller-alert').showModal();}
  function display(state){
   if(state&&Number(state.revision??0)<Number(last.revision??-1))return;
   last=state||{connected:false,revision:last.revision,playback:{}};const p=last.connected?last.playback||{}:{},usable=last.connected&&last.fresh!==false;
-  const launch=last.launch||'idle',message=t(({opening:'carOpening',opened:'carOpened',denied:'carOpenDenied',timeout:'carOpenUnavailable',unavailable:'carOpenUnavailable'})[launch]||'carOpenHint');$('controller-open').disabled=launch==='opening';$('controller-open-status').textContent=message;$('controller-alert-launch').textContent=message;
+  const launch=last.launch||'idle',message=t(({opening:'carOpening',opened:'carOpened',denied:'carOpenDenied',timeout:'carOpenUnavailable',unavailable:'carOpenUnavailable'})[launch]||'carOpenHint');$('controller-open').disabled=launch==='opening';$('controller-open-status').hidden=!['opening','denied','timeout','unavailable'].includes(launch);$('controller-open-status').textContent=message;$('controller-alert-launch').textContent=message;
   $('controller-connection').textContent=t(last.connected?'carConnected':'carDisconnected');$('controller-panel').classList.toggle('connected',!!last.connected);
   $('controller-title').textContent=p.item?.name||t('carNothing');$('controller-phase').textContent=p.item?(last.fresh===false&&!['loading','idle'].includes(p.phase)?t('statusRecovering'):p.seekIssue?t(p.seekIssue):phaseLabel(p.phase)):t('controllerHint');
+  const hasItem=!!p.item;$('controller-transport').hidden=!hasItem;$('controller-title').hidden=!hasItem;$('controller-panel').classList.toggle('has-item',hasItem);if(!hasItem)$('controller-more').open=false;
   const controls={play:usable&&p.canPlay,pause:usable&&p.canPause,stop:last.connected&&!!p.item,next:usable&&p.next,previous:usable&&p.previous,retry:last.connected&&!!p.item,full:usable&&p.canFullscreen,fit:usable&&p.canFill};
   for(const [id,enabled] of Object.entries(controls))$('controller-'+id).disabled=!enabled;
+  $('controller-play').hidden=!!p.canPause;$('controller-pause').hidden=!p.canPause;for(const id of ['next','previous'])$('controller-'+id).hidden=!controls[id];$('controller-retry').hidden=p.phase!=='error';
   $('controller-fit').textContent=t(p.fill?'fullPicture':'fillScreen');$('controller-fit').title=t('fillHint');$('controller-fit').setAttribute('aria-label',t('fillHint'));
   const seekable=!!(usable&&p.seekable);$('controller-seek').hidden=!seekable;$('controller-seek').disabled=!seekable;for(const id of ['controller-back','controller-forward']){$(id).disabled=!seekable;$(id).hidden=p.item?.type==='live';}
   if(seekable&&!seekDragging)$('controller-seek').value=String((p.time||0)/p.duration*100);

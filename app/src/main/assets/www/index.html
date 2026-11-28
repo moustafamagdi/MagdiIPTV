@@ -5,11 +5,14 @@
  <header class="top"><div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 108 108"><path fill="#00796E" d="M0,0h108v108H0z"/><path stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" d="M42,24l12,12 12,-12M42,82h24"/><path fill="#FFFFFF" fill-rule="evenodd" d="M26,37h56q5,0 5,5v30q0,5 -5,5H26q-5,0 -5,-5V42q0,-5 5,-5zM28,44v26h52V44z"/></svg></span><div><strong>MM <b>IPTV</b></strong><small data-i18n="tagline">قنواتك، في مكان واحد</small></div></div><div class="top-actions"><button id="language" class="quiet">EN</button><button id="settings" class="quiet" data-i18n="settings">الإعدادات</button></div></header>
  <main>
   <section id="controller-panel" class="controller-panel" hidden aria-label="Car controller">
-   <button id="controller-open" data-i18n="carOpen">فتح على شاشة العربية</button><p id="controller-open-status" class="subtle" role="status"></p>
-   <div class="controller-heading"><strong data-i18n="controllerTitle">ريموت شاشة العربية</strong><span id="controller-connection" role="status"></span></div>
-   <h2 id="controller-title"></h2><p id="controller-phase" role="status"></p><span id="controller-time"></span>
-   <input id="controller-seek" type="range" min="0" max="100" value="0" aria-label="Seek on car" hidden>
-   <div class="controller-buttons"><button id="controller-previous" aria-label="Previous">⏮</button><button id="controller-play" data-i18n="playControl" disabled>Play</button><button id="controller-pause" data-i18n="pauseControl" disabled>Pause</button><button id="controller-next" aria-label="Next">⏭</button><button id="controller-back" data-i18n="back10" disabled>−10 s</button><button id="controller-forward" data-i18n="forward10" disabled>+10 s</button><button id="controller-stop" data-i18n="stop">إيقاف</button><button id="controller-retry" data-i18n="retry">إعادة المحاولة</button><button id="controller-restart" data-i18n="startBeginning" hidden>Start from beginning</button><button id="controller-fit" disabled>Fill screen</button><button id="controller-full" data-i18n="carFullscreen">ملء شاشة العربية</button></div>
+   <div class="controller-top"><div class="controller-heading"><strong data-i18n="controllerTitle">ريموت شاشة العربية</strong><span id="controller-connection" role="status"></span></div><button id="controller-open" data-i18n="carOpen">فتح على شاشة العربية</button></div>
+   <p id="controller-open-status" class="subtle" role="status" hidden></p>
+   <h2 id="controller-title" hidden></h2><p id="controller-phase" role="status"></p>
+   <div id="controller-transport" hidden>
+    <input id="controller-seek" type="range" min="0" max="100" value="0" data-i18n-label="seekOnCar" hidden><span id="controller-time"></span>
+    <div class="controller-primary"><button id="controller-previous" data-i18n-label="previous">⏮</button><button id="controller-back" data-i18n-label="back10">−10</button><button id="controller-play" class="primary" data-i18n-label="playControl" disabled>▶</button><button id="controller-pause" class="primary" data-i18n-label="pauseControl" disabled>Ⅱ</button><button id="controller-forward" data-i18n-label="forward10">+10</button><button id="controller-next" data-i18n-label="next">⏭</button></div>
+    <details id="controller-more"><summary data-i18n="moreControls">المزيد</summary><div class="controller-secondary"><button id="controller-full" data-i18n="carFullscreen">ملء شاشة العربية</button><button id="controller-fit">بدون حواف</button><button id="controller-stop" data-i18n="stop">إيقاف</button><button id="controller-retry" data-i18n="retry">إعادة المحاولة</button><button id="controller-restart" data-i18n="startBeginning" hidden>ابدأ من البداية</button></div></details>
+   </div>
   </section>
   <section id="offline-page" hidden aria-labelledby="offline-title">
    <div class="offline-page-header"><div><span class="eyebrow">MM IPTV</span><h1 id="offline-title" data-i18n="downloads">التنزيلات</h1></div><button id="offline-close" data-i18n="offlineBack">رجوع</button></div>
@@ -18,14 +21,14 @@
    <div id="offline-path"></div><p id="offline-status" role="status"></p><div id="offline-list"></div>
    <details id="offline-tools"><summary data-i18n="offlineHelp">معلومات التنزيل</summary><p data-i18n="offlineHint"></p><label id="offline-metered-label" class="switch"><input type="checkbox" id="offline-metered"><span data-i18n="allowMetered"></span></label></details>
   </section>
-  <button id="offline-open" data-i18n="downloads">التنزيلات</button>
+  <button id="offline-open" class="library-downloads" data-i18n="downloads">التنزيلات</button>
   <section id="welcome" class="welcome">
    <span class="eyebrow">MM IPTV • WEB PLAYER</span><h1 data-i18n="welcome">شاشتك. قنواتك. اختيارك.</h1><p data-i18n="intro">شاهد القنوات العامة المجانية، أو أضف اشتراكك للقنوات والأفلام والمسلسلات.</p>
    <div class="welcome-actions"><button id="connect" class="primary" data-i18n="connect">اتصال بالاشتراك</button><button id="configure" data-i18n="configure">إضافة / تعديل الحساب</button><button id="public-open" data-i18n="publicChannels">قنوات عامة مجانية</button></div><p id="welcome-state" class="subtle"></p>
   </section>
   <section id="workspace" hidden>
    <div class="workspace-top"><div><span class="eyebrow" data-i18n="library">مكتبتك</span><h1 id="section-title">البث المباشر</h1></div><span class="connection"><i></i><span data-i18n="connected">متصل</span></span></div>
-   <div class="source-bar"><span id="active-source"></span><div><button id="change-subscription" class="quiet" data-i18n="savedAccounts">الحسابات المحفوظة</button><button id="public-switch" class="quiet" data-i18n="publicChannels">قنوات عامة مجانية</button><button id="subscription-switch" class="quiet" data-i18n="mySubscription">اشتراكي</button></div></div>
+   <div class="source-bar"><span id="active-source"></span><details class="library-sources"><summary data-i18n="librarySources">مصادر المكتبة</summary><div><button id="change-subscription" class="quiet" data-i18n="savedAccounts">الحسابات المحفوظة</button><button id="public-switch" class="quiet" data-i18n="publicChannels">قنوات عامة مجانية</button><button id="subscription-switch" class="quiet" data-i18n="mySubscription">اشتراكي</button></div></details></div>
    <nav id="tabs" class="tabs"><button data-tab="live" class="selected" data-i18n="live">البث المباشر</button><button data-tab="vod" data-i18n="vod">الأفلام</button><button data-tab="series" data-i18n="series">المسلسلات</button><button data-tab="favorites" data-i18n="favorites">المفضلة</button><button data-tab="recent" data-i18n="recent">الأخيرة</button></nav>
    <div class="layout">
     <section class="player-column">
@@ -45,7 +48,7 @@
     </section>
     <section class="browse">
      <div class="search-row"><input id="search" type="search" placeholder="ابحث عن قناة أو عنوان…" autocomplete="off"><button id="keyboard" class="quiet" aria-label="Keyboard" hidden>⌨</button><button id="refresh" class="quiet" data-i18n-label="refreshLibrary">↻ <span data-i18n="refreshLibrary">تحديث المكتبة</span></button></div>
-     <div id="library-refresh-bar" class="library-refresh-bar" hidden><div><small id="library-status" role="status"></small><small class="library-schedule" data-i18n="librarySchedule">يتحدّث القسم تلقائيًا كل ٦ ساعات أثناء الاستخدام.</small></div><button id="library-apply" data-i18n="libraryNewContent" hidden>محتوى جديد — عرض</button></div>
+     <details id="library-refresh-bar" class="library-refresh-bar" hidden><summary data-i18n="libraryFreshness">حالة تحديث المكتبة</summary><div><small id="library-status" role="status"></small><small class="library-schedule" data-i18n="librarySchedule">يتحدّث القسم تلقائيًا كل ٦ ساعات أثناء الاستخدام.</small></div><button id="library-apply" data-i18n="libraryNewContent" hidden>محتوى جديد — عرض</button></details>
      <div class="filter-row"><select id="category" aria-label="Category"></select><span id="count" class="subtle"></span></div>
      <div id="list" class="cards"></div><button id="more" class="load-more" hidden data-i18n="more">عرض المزيد</button>
     </section>
