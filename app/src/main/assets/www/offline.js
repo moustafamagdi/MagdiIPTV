@@ -7,8 +7,10 @@ Object.assign(strings.en,{downloadAnyNetwork:'Download using Wi-Fi or mobile dat
 Object.assign(strings.ar,{downloadAnyNetwork:'تنزيل باستخدام الواي فاي أو بيانات الهاتف',downloadWifiOnly:'تنزيل على واي فاي غير محدود فقط',downloadNetworkHint:'اختار الاتصال للتنزيلات دي. استخدام بيانات الهاتف قد يستهلك الباقة. الاختيار مش بيغيّر باقي التنزيلات.',downloadCancel:'إلغاء'});
 Object.assign(strings.en,{offlineWifi:'Waiting for unmetered Wi-Fi',offlineNetwork:'Waiting for a network connection',offlineSpaceError:'Not enough free storage',offlineServerError:'The server could not complete the download',offlineBack:'Back',offlineTransfers:'Downloads & issues',offlineEpisodes:'Episodes',offlineSeasonDelete:'Delete season',offlineNoSection:'Nothing here yet.',offlineUngrouped:'Other episodes',offlineSeasonFallback:'Episodes',offlineDeleteCount:'Files to delete',offlineBrowse:'Browse',offlineReadyCount:'Ready'});
 Object.assign(strings.ar,{offlineWifi:'بانتظار واي فاي غير محدود',offlineNetwork:'بانتظار اتصال بالشبكة',offlineSpaceError:'المساحة المتاحة غير كافية',offlineServerError:'السيرفر لم يتمكن من إكمال التنزيل',offlineBack:'رجوع',offlineTransfers:'جاري التنزيل والمشاكل',offlineEpisodes:'حلقات',offlineSeasonDelete:'حذف الموسم',offlineNoSection:'لا يوجد محتوى هنا حاليًا.',offlineUngrouped:'حلقات أخرى',offlineSeasonFallback:'الحلقات',offlineDeleteCount:'الملفات المطلوب حذفها',offlineBrowse:'تصفح',offlineReadyCount:'جاهز'});
+Object.assign(strings.en,{offlineSending:'Sending to the car…',offlineSent:'Sent to the car. Playback status appears in the car controls.',offlineMissingTitle:'This download is no longer ready. Refresh and try again.'});
+Object.assign(strings.ar,{offlineSending:'جاري إرسال التشغيل للعربية…',offlineSent:'تم الإرسال للعربية. حالة التشغيل تظهر في أزرار التحكم.',offlineMissingTitle:'التنزيل لم يعد جاهزًا. حدّث القائمة وحاول مجددًا.'});
 window.Offline=(()=>{
- let selected=false,refreshing=false,operation=false,snapshot=null;
+ let selected=false,refreshing=false,operation=false,snapshot=null,launching=false,launchGeneration=0;
  let pageOpen=false,section="vod",seriesKey=null,seasonKey=null,previousScroll=0,lastRender="";
  const active=()=>selected&&source==='offline';
  const bytes=n=>{n=Math.max(0,Number(n)||0);return n>=1073741824?(n/1073741824).toFixed(1)+' GB':(n/1048576).toFixed(1)+' MB';};
@@ -31,28 +33,37 @@ window.Offline=(()=>{
    if(!group){seriesKey=null;seasonKey=null;for(const g of groups)addGroup(g,()=>navigate(g.key,null));}
    else {
     const title=document.createElement('h2');title.textContent=group.title||t('offlineUngrouped');path.append(title);
-    const seasons=OfflineCatalog.seasons(group.items),season=seasons.find(g=>g.key===seasonKey);
-    if(!season){seasonKey=null;for(const g of seasons)addGroup(g,()=>navigate(group.key,g.key));}
-    else {const heading=document.createElement('p');heading.textContent=season.title||t('offlineSeasonFallback');path.append(heading);if(phone)path.append(button(t('offlineSeasonDelete'),()=>deleteGroup(season.items)));for(const row of season.items.slice().sort((a,b)=>a.name.localeCompare(b.name,language,{numeric:true})))addRow(row);}
+    const seasons=OfflineCatalog.seasons(group.items).sort((a,b)=>a.title.localeCompare(b.title,language,{numeric:true}));
+    const season=seasons.find(g=>g.key===seasonKey)||seasons[0];seasonKey=season?.key||null;
+    const choices=document.createElement('div');choices.className='offline-seasons';choices.setAttribute('aria-label',t('season'));
+    for(const entry of seasons){const pick=button(entry.title||t('offlineSeasonFallback'),()=>navigate(group.key,entry.key));pick.setAttribute('aria-pressed',String(entry===season));pick.classList.toggle('selected',entry===season);choices.append(pick);}path.append(choices);
+    if(season){if(phone){const del=button(t('offlineSeasonDelete'),()=>deleteGroup(season.items));del.className='offline-manage';path.append(del);}for(const row of season.items.slice().sort((a,b)=>a.name.localeCompare(b.name,language,{numeric:true})))addRow(row);}
    }
   }else for(const row of rows.filter(r=>section==='vod'?r.type==='vod':r.state!=='ready'))addRow(row);
   if(!list.children.length){const p=document.createElement('p');p.className='empty';p.textContent=data.items.length?t('offlineNoSection'):t('offlineEmpty');list.append(p);}
   if(typeof Metadata!=='undefined')Metadata.prune();
   if(focus)for(const b of list.querySelectorAll('button'))if(b.dataset.offlineKey===focus)b.focus({preventScroll:true});list.scrollTop=scroll;
-  function addGroup(group,onOpen){const article=document.createElement('article');article.className='offline-row offline-group';const title=document.createElement('h2');title.textContent=group.title||t('offlineSeasonFallback');const state=document.createElement('p');state.textContent=group.items.length+' '+t('offlineEpisodes')+' · '+group.items.filter(r=>r.state==='ready').length+' '+t('offlineReadyCount')+' · '+bytes(OfflineCatalog.size(group.items));const open=button(t('offlineBrowse'),onOpen);open.dataset.offlineKey=group.key;article.append(title,state,open);list.append(article);}
+  function addGroup(group,onOpen){const article=document.createElement('article');article.className='offline-row offline-group';const title=document.createElement('strong');title.textContent=group.title||t('offlineSeasonFallback');const state=document.createElement('p');state.textContent=group.items.length+' '+t('offlineEpisodes')+' · '+group.items.filter(r=>r.state==='ready').length+' '+t('offlineReadyCount')+' · '+bytes(OfflineCatalog.size(group.items));const open=button('',onOpen);open.className='offline-pick';const hint=document.createElement('span');hint.textContent=t('offlineBrowse')+' ›';open.append(title,state,hint);open.dataset.offlineKey=group.key;article.append(open);list.append(article);}
   function addRow(row){const article=document.createElement('article');article.className='offline-row';const title=document.createElement('h2');title.textContent=row.name;
    const icon=row.artwork?Metadata.tile(row):document.createElement('span');if(!row.artwork){icon.className='offline-art';icon.textContent=row.type==='vod'?'▶':'▤';icon.setAttribute('aria-hidden','true');}article.append(icon,title);
    const state=document.createElement('p');state.textContent=[row.group,row.reason?t(row.reason):'',row.segmentsTotal?row.segmentsDone+' / '+row.segmentsTotal:'',t(({ready:'offlineReady',queued:'offlineQueued',downloading:'offlineDownloading',waiting:'offlineWaiting',failed:'offlineFailed',invalid:'offlineInvalid',missing:'offlineMissing',cancelled:'offlineCancelled'})[row.state]||'offlineFailed'),bytes(row.bytes)+(row.total>0?' / '+bytes(row.total):'')].filter(Boolean).join(' · ');article.append(state);
    if(['queued','downloading','waiting'].includes(row.state)){const progress=document.createElement('progress');if(row.total>0){progress.max=row.total;progress.value=Math.min(row.bytes||0,row.total);}progress.setAttribute('aria-label',row.name);article.append(progress);}
    const add=(label,fn,key)=>{const b=button(label,fn);b.dataset.offlineKey=row.token+':'+key;article.append(b);};
-   if(row.state==='ready')add(t(phone?'playOnCar':'playControl'),async()=>{try{if(await activate())selectItem(playable(row));}catch{notice(t('offlineError'));}},'play');
+   if(row.state==='ready'){const pick=button('',()=>start(row));pick.className='offline-pick';pick.dataset.offlineKey=row.token+':play';const copy=document.createElement('span');copy.className='offline-copy';const name=document.createElement('strong');name.textContent=row.name;const hint=document.createElement('span');hint.className='offline-play-label';hint.textContent='▶ '+t(phone?'playOnCar':'playControl');copy.append(name,hint);pick.append(icon,copy);title.remove();article.prepend(pick);}
    if(phone){if(['queued','downloading','waiting'].includes(row.state))add(t('offlineCancel'),()=>action(row,'cancel'),'cancel');else if(row.state!=='ready')add(t('offlineRetry'),()=>action(row,'retry'),'retry');add(t('offlineDelete'),()=>deleteGroup([row]),'delete');}list.append(article);
   }
  }
- async function deleteGroup(rows){if(operation||!Controller.isPhone()||!confirm(t('offlineConfirmDelete')+'\n'+t('offlineDeleteCount')+': '+rows.length+' · '+bytes(OfflineCatalog.size(rows))))return;operation=true;try{for(const row of rows)await api('downloadaction',{token:row.token,action:'delete'});await refresh();}catch{$('offline-status').textContent=t('offlineError');}finally{operation=false;}}
+ async function start(row){
+  if(launching||operation||!pageOpen)return;const generation=++launchGeneration;launching=true;$('offline-list').setAttribute('aria-busy','true');$('offline-status').textContent=t('offlineSending');
+  try{const data=await api('downloads');if(!pageOpen||generation!==launchGeneration)return;const latest=data.items.find(r=>r.token===row.token&&r.state==='ready');if(!latest){$('offline-status').textContent=t('offlineMissingTitle');return;}
+   if(Controller.isPhone()){const accepted=await Controller.select(playable(latest));$('offline-status').textContent=t(accepted?'offlineSent':'carCommandFailed');}
+   else if(await activate()){selectItem(playable(latest));}
+  }catch{$('offline-status').textContent=t('offlineError');}finally{launching=false;$('offline-list').setAttribute('aria-busy','false');}
+ }
+ async function deleteGroup(rows){if(launching||operation||!Controller.isPhone()||!confirm(t('offlineConfirmDelete')+'\n'+t('offlineDeleteCount')+': '+rows.length+' · '+bytes(OfflineCatalog.size(rows))))return;operation=true;try{for(const row of rows)await api('downloadaction',{token:row.token,action:'delete'});await refresh();}catch{$('offline-status').textContent=t('offlineError');}finally{operation=false;}}
  async function open(){for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();if(!pageOpen)previousScroll=window.scrollY;pageOpen=true;document.body.classList.add('offline-page-open');$('offline-page').hidden=false;lastRender='';$('offline-status').textContent='';window.scrollTo(0,0);await refresh();}
- function close(){if(!pageOpen)return;pageOpen=false;document.body.classList.remove('offline-page-open');$('offline-page').hidden=true;window.scrollTo(0,previousScroll);}
- function back(){if(!pageOpen)return false;if(seasonKey)seasonKey=null;else if(seriesKey)seriesKey=null;else {close();return true;}lastRender='';if(snapshot)renderLibrary(snapshot);return true;}
+ function close(){if(!pageOpen)return;++launchGeneration;pageOpen=false;document.body.classList.remove('offline-page-open');$('offline-page').hidden=true;window.scrollTo(0,previousScroll);}
+ function back(){if(!pageOpen)return false;if(seriesKey){seriesKey=null;seasonKey=null;}else {close();return true;}lastRender='';if(snapshot)renderLibrary(snapshot);return true;}
  async function action(row,action){if(operation)return;operation=true;try{await api('downloadaction',{token:row.token,action});await refresh();}catch{$('offline-status').textContent=t('offlineError');}finally{operation=false;}}
  function chooseNetwork(summary){return new Promise(resolve=>{
   const dialog=document.createElement('dialog');dialog.className='offline-network-choice';
@@ -90,7 +101,7 @@ window.Offline=(()=>{
   $('start-fullscreen').onchange=()=>api('playprefs',{fullscreen:$('start-fullscreen').checked}).catch(()=>notice(t('offlineError')));
   api('playprefs').then(p=>$('start-fullscreen').checked=p.fullscreen).catch(()=>{});
   $('offline-season').onclick=()=>enqueue(seasonItems());
-  setInterval(()=>{if(pageOpen&&!operation)refresh();seasonState();},2000);
+  setInterval(()=>{if(pageOpen&&!operation&&!launching)refresh();seasonState();},2000);
  }
  return {init,open,close,back,activate,active,decorate,supported,enqueue,reason,seasonState};
 })();

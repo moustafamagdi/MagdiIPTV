@@ -119,3 +119,11 @@ body.offline-page-open main> :not(#offline-page){display:none!important}
 #offline-path{display:flex;flex-wrap:wrap;align-items:center;gap:12px}#offline-tools{margin-top:24px;border-top:1px solid var(--line);padding-top:16px}#offline-space{color:var(--muted)}
 
 #offline-page .offline-row>.tile{width:64px;height:80px;display:block;margin-bottom:12px}
+
+#offline-page .offline-pick{display:flex;align-items:center;gap:16px;width:100%;min-height:88px;text-align:start;border:1px solid var(--line);border-radius:14px;padding:16px;margin:0;background:transparent;color:var(--text)}
+#offline-page .offline-pick:hover,#offline-page .offline-pick:focus-visible{border-color:var(--accent);background:#16483e33}#offline-page .offline-pick:active{background:#16483e88}
+#offline-page .offline-pick strong{font-size:19px;overflow-wrap:anywhere}#offline-page .offline-pick .offline-art,#offline-page .offline-pick .tile{flex:0 0 56px;width:56px;height:70px;margin:0}
+#offline-page .offline-copy{display:flex;flex-direction:column;gap:10px;min-width:0}.offline-play-label{color:var(--accent);font-weight:600}.offline-group .offline-pick{flex-direction:column;align-items:flex-start}
+.offline-seasons{display:flex;flex-wrap:wrap;gap:10px;width:100%}.offline-seasons button{min-height:48px}.offline-seasons .selected{border-color:var(--accent);color:var(--accent)}#offline-path h2{width:100%;margin-bottom:0}
+#offline-page .offline-row>button:not(.offline-pick),#offline-page .offline-manage{font-size:14px;background:transparent;color:var(--muted)}body:not(.controller) .offline-seasons button{min-height:76px;min-width:76px}
+#offline-list[aria-busy=true] .offline-pick{opacity:.65;pointer-events:none}
