@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import '../app/src/main/assets/www/offline_catalog.js';
+const C=globalThis.OfflineCatalog;
+const row=(token,account,season,name='Series')=>({token,type:'episode',name:'Episode '+token,group:name+' · Season '+season,groupKey:account+':'+name+' · Season '+season,bytes:100});
+test('legacy episodes form series and seasons without changing files',()=>{const rows=[row('1','a',1),row('2','a',1),row('3','a',2)],before=JSON.stringify(rows);const groups=C.series(rows);assert.equal(groups.length,1);assert.equal(groups[0].items.length,3);assert.equal(C.seasons(groups[0].items).length,2);assert.equal(C.size(rows),300);assert.equal(JSON.stringify(rows),before)});
+test('same titles on different accounts never share deletion groups',()=>{const groups=C.series([row('1','a',1),row('2','b',1)]);assert.equal(groups.length,2);assert.notEqual(groups[0].key,groups[1].key)});
+test('legacy Arabic grouping and explicit fields work',()=>{const r=row('1','a',1,'مسلسل · عنوان');r.group='مسلسل · عنوان · الموسم ١';r.groupKey='a:'+r.group;assert.equal(C.info(r).title,'مسلسل · عنوان');assert.equal(C.info(r).season,'الموسم ١');assert.equal(C.info({...r,series:'عنوان محفوظ',season:'موسم محفوظ'}).title,'عنوان محفوظ')});
+test('missing group metadata does not merge unrelated episodes',()=>{assert.equal(C.series([{token:'a',type:'episode'},{token:'b',type:'episode'}]).length,2);assert.equal(C.series([{token:'x',type:'vod'}]).length,0)});

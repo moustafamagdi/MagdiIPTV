@@ -72,7 +72,7 @@ window.Controller=(()=>{
   stop();pendingItem=item;publish();
   const valid=()=>generation===version&&session===epoch&&epoch!==0;
   try{
-   for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();
+   for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();Offline.close();
    if(item.offline){if(!await Offline.activate(valid)||!valid())return;pendingItem=null;await play(item);return;}
    if(source!==ctx.source||$('workspace').hidden){if(ctx.publicSource){$('public-preset').value=ctx.publicSource;await connectPublic();}else {account=await api('config');if(!valid())return;if(!account.configured)throw Error('Account unavailable');await connectAccount();}}
    if(!valid())return;if(source!==ctx.source||$('workspace').hidden)throw Error('Source unavailable');

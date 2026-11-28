@@ -33,6 +33,8 @@ final class OfflineLibrary {
    String token=UUID.randomUUID().toString();
    JSONObject row=new JSONObject().put("token",token).put("key",key).put("ext",ext).put("type",type)
     .put("name",shortText(item.optString("name","Video"))).put("group",shortText(item.optString("group","")))
+    .put("artwork",item.optString("artwork","").length()<=2048?item.optString("artwork",""):"")
+    .put("series",shortText(item.optString("series",""))).put("season",shortText(item.optString("season","")))
     .put("groupKey",account+":"+item.optString("group",""))
     .put("url",url).put("metered",metered).put("state","queued").put("created",System.currentTimeMillis());
    // Persist intent before enqueue. A crash here leaves a retryable item, never a false completion.
@@ -56,7 +58,7 @@ final class OfflineLibrary {
   List<String> ids=new ArrayList<>();data.keys().forEachRemaining(ids::add);
   ids.sort((a,b)->Long.compare(data.optJSONObject(b).optLong("created"),data.optJSONObject(a).optLong("created")));
   for(String id:ids){JSONObject row=data.getJSONObject(id);refresh(row);File f=file(row);used+=f.exists()?f.length():0;if(row.has("segments")){for(int part=0;part<row.getJSONArray("segments").length();part++)used+=OfflineHls.part(directory(),id,part).length();}
-   JSONObject safe=new JSONObject();for(String field:new String[]{"token","name","type","ext","group","groupKey","state","bytes","total","reason","segmentsDone","segmentsTotal"})if(row.has(field))safe.put(field,row.get(field));result.put(safe);
+   JSONObject safe=new JSONObject();for(String field:new String[]{"token","name","type","ext","group","groupKey","series","season","artwork","state","bytes","total","reason","segmentsDone","segmentsTotal"})if(row.has(field))safe.put(field,row.get(field));result.put(safe);
   }save(data);return new JSONObject().put("items",result).put("used",used).put("free",directory().getUsableSpace())
    .put("metered",context.getSharedPreferences("iptv",0).getBoolean("offlineMetered",false));
  }}
@@ -70,6 +72,8 @@ final class OfflineLibrary {
    long total=cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
    row.put("bytes",Math.max(0,bytes)).put("total",total);
    int status=cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+   row.remove("reason");int causeColumn=cursor.getColumnIndex(DownloadManager.COLUMN_REASON);
+   if(causeColumn>=0){int cause=cursor.getInt(causeColumn);if(status==DownloadManager.STATUS_PAUSED)row.put("reason",cause==DownloadManager.PAUSED_QUEUED_FOR_WIFI?"offlineWifi":cause==DownloadManager.PAUSED_WAITING_FOR_NETWORK?"offlineNetwork":"offlineWaiting");else if(status==DownloadManager.STATUS_FAILED)row.put("reason",cause==DownloadManager.ERROR_INSUFFICIENT_SPACE?"offlineSpaceError":cause>=400&&cause<600||cause==DownloadManager.ERROR_HTTP_DATA_ERROR||cause==DownloadManager.ERROR_UNHANDLED_HTTP_CODE?"offlineServerError":"offlineFailed");}
    if(status==DownloadManager.STATUS_SUCCESSFUL){File f=file(row);
     if("m3u8".equals(row.getString("ext"))){try{if(f.length()>2*1024*1024)throw new OfflineHls.Unsupported("hlsLayout");JSONObject parsed=OfflineHls.parse(new String(java.nio.file.Files.readAllBytes(f.toPath()),java.nio.charset.StandardCharsets.UTF_8),row.getString("url"),row.getString("token"));row.put("segments",parsed.getJSONArray("segments")).put("playlist",parsed.getString("playlist"));OfflineHls.refresh(context,manager,directory(),row);}catch(OfflineHls.Unsupported unsupported){row.put("state","invalid").put("reason",unsupported.reason);}catch(Exception malformed){row.put("state","invalid").put("reason","hlsLayout");}return;}
 boolean valid=f.isFile()&&f.length()>0&&(total<0||f.length()==total)&&validHeader(f,row.getString("ext"));

@@ -109,3 +109,13 @@ body.fullscreen #offline-open{display:none}
 .player-box.full .picture-fit-row button{min-height:48px}
 
 .player-box.full .exit-full{top:calc(50% - 26px)}
+
+body.offline-page-open main> :not(#offline-page){display:none!important}
+#offline-page{max-width:1200px;margin:auto}#offline-page[hidden]{display:none}
+.offline-page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+#offline-page #offline-list{max-height:none;overflow:visible;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;margin-top:16px}
+#offline-page .offline-row{margin:0;min-width:0;background:var(--panel)}#offline-page .offline-row h2{font-size:18px;overflow-wrap:anywhere}#offline-page .offline-row progress{display:block;width:100%;margin:12px 0;accent-color:var(--accent)}
+.offline-art{display:grid;place-items:center;width:64px;height:80px;border-radius:12px;background:#16483e;color:var(--accent);font-size:26px;margin-bottom:12px}
+#offline-path{display:flex;flex-wrap:wrap;align-items:center;gap:12px}#offline-tools{margin-top:24px;border-top:1px solid var(--line);padding-top:16px}#offline-space{color:var(--muted)}
+
+#offline-page .offline-row>.tile{width:64px;height:80px;display:block;margin-bottom:12px}
